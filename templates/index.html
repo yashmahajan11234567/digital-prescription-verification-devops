@@ -1,0 +1,14 @@
+{% extends "base.html" %}
+{% block title %}RxVerify | Prescription Verification{% endblock %}
+{% block content %}
+<section class="hero">
+  <p class="eyebrow">DIGITAL PRESCRIPTION VERIFICATION</p>
+  <h1>Secure handoff from doctor to pharmacist.</h1>
+  <p class="lead">A local prototype with separate role-based portals for issuing and verifying digital prescriptions.</p>
+</section>
+<section class="steps">
+  <article><strong>01 · DOCTOR</strong><h2>Issue prescription</h2><p>Create a prescription and share its unique verification ID.</p><a class="button" href="{{ url_for('login', role='doctor') }}">Doctor sign in</a></article>
+  <article><strong>02 · PHARMACIST</strong><h2>Verify prescription</h2><p>Check the prescription before dispensing medicine.</p><a class="button secondary" href="{{ url_for('login', role='pharmacist') }}">Pharmacist sign in</a></article>
+  <article><strong>03 · NEXT PHASE</strong><h2>Admin portal</h2><p>Later, an administrator can manage users, clinics, and audit records.</p><span class="coming-soon">Planned</span></article>
+</section>
+{% endblock %}

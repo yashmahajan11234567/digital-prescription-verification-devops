@@ -1,0 +1,16 @@
+services:
+  rxverify:
+    build: .
+    container_name: rxverify-app
+    ports:
+      # Host port 5001 avoids macOS Control Center, which reserves port 5000.
+      - "5001:5000"
+    environment:
+      # Replace this with a secure value before any cloud deployment.
+      SECRET_KEY: local-docker-demo-change-me
+    volumes:
+      - prescription_data:/app/instance
+    restart: unless-stopped
+
+volumes:
+  prescription_data:

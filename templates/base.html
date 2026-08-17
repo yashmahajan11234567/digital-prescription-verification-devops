@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>{% block title %}RxVerify{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="{{ url_for('home') }}"><span>✚</span> RxVerify</a>
+      <nav>
+        {% if current_user.role == 'doctor' %}
+          <a href="{{ url_for('issue_prescription') }}">Issue</a><a href="{{ url_for('prescriptions') }}">Records</a>
+        {% elif current_user.role == 'pharmacist' %}
+          <a href="{{ url_for('verify_form') }}">Verify</a>
+        {% endif %}
+        {% if current_user.role %}
+          <span class="user-label">{{ current_user.name }}</span>
+          <form class="logout-form" method="post" action="{{ url_for('logout') }}"><button type="submit">Sign out</button></form>
+        {% endif %}
+      </nav>
+    </header>
+    <main class="container">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+        {% for category, message in messages %}
+          <p class="flash {{ category }}">{{ message }}</p>
+        {% endfor %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+    </main>
+    <footer>Local MVP · Digital Prescription Verification System</footer>
+  </body>
+</html>

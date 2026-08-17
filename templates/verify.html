@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Verify prescription | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading"><p class="eyebrow">PUBLIC CHECK</p><h1>Verify a prescription</h1><p>Enter the verification ID printed or shared by the clinic.</p></div>
+<form class="card verify-form" method="post">
+  <label>Prescription ID<input name="verification_id" placeholder="RX-XXXXXXXXXX" autocomplete="off" required></label>
+  <button class="button" type="submit">Verify now</button>
+</form>
+{% endblock %}

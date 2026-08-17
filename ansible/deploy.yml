@@ -1,0 +1,112 @@
+---
+- name: Deploy RxVerify to AWS EC2
+  hosts: web
+  become: true
+  vars_files:
+    - secrets.yml
+  vars:
+    app_directory: /opt/rxverify
+    image_name: rxverify:latest
+    container_name: rxverify-app
+    data_volume: rxverify_data
+
+  pre_tasks:
+    - name: Ensure a non-placeholder app secret is supplied
+      ansible.builtin.assert:
+        that:
+          - app_secret_key != "replace-this-with-a-long-random-secret"
+          - app_secret_key | length >= 32
+        fail_msg: "Create ansible/secrets.yml with a secure app_secret_key before deployment."
+
+  tasks:
+    - name: Update Ubuntu package metadata
+      ansible.builtin.apt:
+        update_cache: true
+        cache_valid_time: 3600
+
+    - name: Install Docker Engine
+      ansible.builtin.apt:
+        name: docker.io
+        state: present
+
+    - name: Start Docker now and on boot
+      ansible.builtin.service:
+        name: docker
+        state: started
+        enabled: true
+
+    - name: Create application directory
+      ansible.builtin.file:
+        path: "{{ app_directory }}"
+        state: directory
+        mode: "0755"
+
+    - name: Copy Flask entry point and Docker build files
+      ansible.builtin.copy:
+        src: "../{{ item }}"
+        dest: "{{ app_directory }}/{{ item }}"
+        mode: "0644"
+      loop:
+        - app.py
+        - requirements.txt
+        - Dockerfile
+
+    - name: Copy application templates
+      ansible.builtin.copy:
+        src: ../templates/
+        dest: "{{ app_directory }}/templates/"
+        mode: "0644"
+
+    - name: Copy application static files
+      ansible.builtin.copy:
+        src: ../static/
+        dest: "{{ app_directory }}/static/"
+        mode: "0644"
+
+    - name: Build the RxVerify Docker image on EC2
+      ansible.builtin.command: docker build --tag {{ image_name }} .
+      args:
+        chdir: "{{ app_directory }}"
+      changed_when: true
+
+    - name: Create persistent Docker volume for prescription data
+      ansible.builtin.command: docker volume create {{ data_volume }}
+      register: volume_create
+      changed_when: volume_create.stdout == data_volume
+
+    - name: Remove a previous application container, if one exists
+      ansible.builtin.command: docker rm --force {{ container_name }}
+      register: previous_container
+      failed_when: previous_container.rc not in [0, 1]
+      changed_when: previous_container.rc == 0
+
+    - name: Run the RxVerify container on website port 80
+      ansible.builtin.command:
+        argv:
+          - docker
+          - run
+          - --detach
+          - --name
+          - "{{ container_name }}"
+          - --restart
+          - unless-stopped
+          - --publish
+          - "80:5000"
+          - --volume
+          - "{{ data_volume }}:/app/instance"
+          - --env
+          - "SECRET_KEY={{ app_secret_key }}"
+          - "{{ image_name }}"
+      no_log: true
+      changed_when: true
+
+    - name: Check the application health endpoint on EC2
+      ansible.builtin.uri:
+        url: http://127.0.0.1/health
+        return_content: true
+        status_code: 200
+      register: healthcheck
+
+    - name: Show health result
+      ansible.builtin.debug:
+        var: healthcheck.json
