@@ -32,3 +32,9 @@ test_postgres_seeding.py
 test_truncate_table.py
 *_cookies.txt
 check_schema.py
+
+# Local instance directory (contains SQLite databases)
+instance/
+
+# Python packages and virtual environments (accidental repo creation)
+UsershitoyAppDataLocalPythonPython314-64Libsite-packages/
