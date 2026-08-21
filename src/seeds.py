@@ -139,9 +139,10 @@ def _upsert_hospital(db, cursor, hospital_data: dict, is_postgres: bool, force: 
             db.commit()
             cursor.execute("SELECT id FROM hospitals WHERE name = ?", (name,))
             existing = cursor.fetchone()
-            # Check if this was a new insert (rowcount > 0 means INSERT happened)
-            was_created = cursor.rowcount > 0
-            return existing["id"] if existing else None, was_created
+            # Check if this was a new insert by checking if we got existing data
+            # If existing is not None, the record already existed and INSERT was ignored
+            was_created = existing is None
+            return existing["id"] if existing else None, not was_created
 
 
 def _upsert_user(db, cursor, user_data: dict, hospital_id: int | None, is_postgres: bool, force: bool = False) -> bool:
