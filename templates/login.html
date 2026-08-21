@@ -6,6 +6,6 @@
   <label>Email<input type="email" name="email" required autocomplete="email"></label>
   <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
   <button class="button" type="submit">Sign in as {{ role|title }}</button>
-  <p class="demo-note">Demo: <code>{% if role == 'doctor' %}doctor@rxverify.local / doctor123{% else %}pharmacist@rxverify.local / pharmacist123{% endif %}</code></p>
+  <p class="demo-note">Demo: <code>{% if role == 'doctor' %}doctor@rxverify.local / doctor123{% elif role == 'admin' %}admin@rxverify.local / admin123{% else %}pharmacist@rxverify.local / pharmacist123{% endif %}</code></p>
 </form>
 {% endblock %}

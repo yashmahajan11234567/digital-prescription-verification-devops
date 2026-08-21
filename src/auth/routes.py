@@ -27,7 +27,7 @@ def login(role: str):
             elif role == "pharmacist":
                 return redirect(url_for("pharmacist.verify_form"))
             else:  # admin
-                return redirect(url_for("home"))
+                return redirect(url_for("admin.dashboard"))
         # Generic error - don't reveal whether email exists
         flash("Incorrect credentials or account role.", "error")
     return render_template("login.html", role=role)

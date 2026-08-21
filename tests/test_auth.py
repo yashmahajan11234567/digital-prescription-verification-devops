@@ -311,10 +311,15 @@ class TestAuthorization:
         assert response.status_code == 200
 
     def test_admin_authorization(self, client):
-        """Test admin role is recognized."""
+        """Test admin role is recognized and redirected to admin dashboard."""
         login(client, "admin")
-        # Admin should be able to access home page
+        # Admin visiting / should be redirected to admin dashboard
         response = client.get("/")
+        assert response.status_code == 302
+        assert "/admin/" in response.headers["Location"]
+
+        # Admin dashboard should be accessible
+        response = client.get("/admin/")
         assert response.status_code == 200
 
     def test_doctor_cannot_access_pharmacist_routes(self, client):
@@ -377,3 +382,97 @@ class TestSessionManagement:
         with client.session_transaction() as sess:
             assert sess["role"] == "pharmacist"
             assert sess["user_id"] != 1  # Different user
+
+
+class TestAdminUXAndRBAC:
+    """Tests for Admin UX/RBAC changes."""
+
+    def test_admin_login_redirects_to_admin_dashboard(self, client):
+        """A. Admin successful login redirects to /admin/"""
+        response = login(client, "admin")
+        assert response.status_code == 302
+        assert "/admin/" in response.headers["Location"]
+
+    def test_admin_dashboard_returns_200_after_login(self, client):
+        """B. Admin dashboard returns HTTP 200 after login."""
+        login(client, "admin")
+        response = client.get("/admin/")
+        assert response.status_code == 200
+        assert b"Dashboard" in response.data
+        assert b"Hospitals" in response.data
+
+    def test_admin_visiting_home_does_not_see_doctor_portal(self, client):
+        """C. Admin visiting / does not see Doctor portal actions."""
+        login(client, "admin")
+        response = client.get("/")
+        # Should be redirected to admin dashboard
+        assert response.status_code == 302
+        assert "/admin/" in response.headers["Location"]
+
+    def test_admin_visiting_home_does_not_see_pharmacist_portal(self, client):
+        """D. Admin visiting / does not see Pharmacist portal actions."""
+        login(client, "admin")
+        response = client.get("/")
+        # Should be redirected to admin dashboard
+        assert response.status_code == 302
+        assert "/admin/" in response.headers["Location"]
+
+    def test_unauthenticated_visitor_sees_normal_landing_page(self, client):
+        """E. Unauthenticated visitor still sees the normal public landing page."""
+        response = client.get("/")
+        assert response.status_code == 200
+        assert b"Doctor sign in" in response.data
+        assert b"Pharmacist sign in" in response.data
+        assert b"Admin sign in" in response.data
+
+    def test_admin_cannot_access_doctor_only_routes(self, client):
+        """F. Admin cannot access Doctor-only routes."""
+        login(client, "admin")
+        response = client.get("/prescriptions/new")
+        assert response.status_code == 302
+        assert "/login/doctor" in response.headers["Location"]
+
+        response = client.get("/prescriptions")
+        assert response.status_code == 302
+        assert "/login/doctor" in response.headers["Location"]
+
+    def test_admin_cannot_access_pharmacist_only_routes(self, client):
+        """G. Admin cannot access Pharmacist-only routes."""
+        login(client, "admin")
+        # /verify is pharmacist-only
+        response = client.get("/verify")
+        assert response.status_code == 302
+        assert "/login/pharmacist" in response.headers["Location"]
+
+        # /verify/<id> allows doctor OR pharmacist - admin gets redirected to home then to /admin/
+        response = client.get("/verify/RX-TEST", follow_redirects=True)
+        assert response.status_code == 200  # Final destination is admin dashboard
+        assert b"Dashboard" in response.data
+
+    def test_doctor_pharmacist_functionality_unchanged(self, client):
+        """H. Doctor and Pharmacist functionality remains unchanged."""
+        # Doctor can still access doctor routes
+        login(client, "doctor")
+        response = client.get("/prescriptions/new")
+        assert response.status_code == 200
+
+        response = client.get("/prescriptions")
+        assert response.status_code == 200
+
+        # Pharmacist can still access pharmacist routes
+        client.post("/logout")
+        login(client, "pharmacist")
+        response = client.get("/verify")
+        assert response.status_code == 200
+
+        response = client.get("/verify/RX-TEST")
+        assert response.status_code == 200
+
+    def test_admin_login_page_displays_correct_demo_credentials(self, client):
+        """I. Admin login page displays admin@rxverify.local / admin123"""
+        response = client.get("/login/admin")
+        assert response.status_code == 200
+        assert b"admin@rxverify.local" in response.data
+        assert b"admin123" in response.data
+        assert b"pharmacist@rxverify.local" not in response.data
+        assert b"pharmacist123" not in response.data

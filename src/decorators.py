@@ -37,7 +37,7 @@ def require_any_role(*roles: str):
             if session.get("role") not in roles:
                 roles_str = " or ".join(roles)
                 flash(f"Please sign in as a {roles_str} to continue.", "error")
-                return redirect(url_for("index"))
+                return redirect(url_for("home"))
             return view(*args, **kwargs)
         return wrapped
     return decorator

@@ -444,6 +444,9 @@ def create_app(test_config: dict | None = None) -> Flask:
 
     @app.get("/", endpoint="home")
     def home():
+        # Redirect authenticated admin to admin dashboard
+        if session.get("role") == "admin":
+            return redirect(url_for("admin.dashboard"))
         return render_template("index.html")
 
     @app.get("/health")
