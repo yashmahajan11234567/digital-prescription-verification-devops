@@ -8,14 +8,9 @@
     app_directory: /opt/rxverify
     image_name: rxverify:latest
     container_name: rxverify-app
-    postgres_container_name: rxverify-postgres
-    postgres_volume: rxverify_postgres_data
     data_volume: rxverify_data
-    # Database configuration - override via secrets.yml or environment
-    postgres_host: "postgres"
-    postgres_port: "5432"
-    postgres_db: "rxverify"
-    postgres_user: "postgres"
+    # SQLite database configuration (application convention)
+    database_url: "sqlite:///instance/prescriptions.db"
 
   pre_tasks:
     - name: Ensure a non-placeholder app secret is supplied
@@ -24,15 +19,6 @@
           - app_secret_key != "replace-this-with-a-long-random-secret"
           - app_secret_key | length >= 32
         fail_msg: "Create ansible/secrets.yml with a secure app_secret_key before deployment."
-
-    - name: Ensure postgres_password is supplied and not the default
-      ansible.builtin.assert:
-        that:
-          - postgres_password is defined
-          - postgres_password != "changeme"
-          - postgres_password != "change-me"
-          - postgres_password | length >= 16
-        fail_msg: "Create ansible/secrets.yml with a secure postgres_password (minimum 16 characters) before deployment."
 
   tasks:
     - name: Update Ubuntu package metadata
@@ -95,53 +81,25 @@
         chdir: "{{ app_directory }}"
       changed_when: true
 
-    - name: Create Docker network for RxVerify and PostgreSQL
-      community.docker.docker_network:
-        name: rxverify-network
-      register: network_create
-
-    - name: Create persistent Docker volume for PostgreSQL data
-      community.docker.docker_volume:
-        name: "{{ postgres_volume }}"
-      register: pg_volume_create
-
     - name: Create persistent Docker volume for prescription data
       community.docker.docker_volume:
         name: "{{ data_volume }}"
       register: volume_create
 
-    - name: Deploy PostgreSQL container
-      community.docker.docker_container:
-        name: "{{ postgres_container_name }}"
-        image: "postgres:16-alpine"
-        state: started
-        restart_policy: unless-stopped
-        env:
-          POSTGRES_DB: "{{ postgres_db }}"
-          POSTGRES_USER: "{{ postgres_user }}"
-          POSTGRES_PASSWORD: "{{ postgres_password }}"
-        volumes:
-          - "{{ postgres_volume }}:/var/lib/postgresql/data"
-        networks:
-          - name: rxverify-network
-        healthcheck:
-          test: ["CMD-SHELL", "pg_isready -U {{ postgres_user }} -d {{ postgres_db }}"]
-          interval: 5s
-          timeout: 5s
-          retries: 5
-          start_period: 10s
-        no_log: true
-      register: pg_container
+    - name: Ensure SQLite database volume directory has correct ownership for appuser
+      ansible.builtin.file:
+        path: "/var/lib/docker/volumes/{{ data_volume }}/_data"
+        owner: "999"
+        group: "999"
+        mode: "0755"
 
-    - name: Wait for PostgreSQL to be healthy
-      ansible.builtin.command: >
-        docker exec {{ postgres_container_name }}
-        pg_isready -U {{ postgres_user }} -d {{ postgres_db }}
-      register: pg_ready
-      retries: 30
-      delay: 5
-      until: pg_ready.rc == 0
-      changed_when: false
+    - name: Ensure SQLite database file has correct ownership for appuser (if exists)
+      ansible.builtin.file:
+        path: "/var/lib/docker/volumes/{{ data_volume }}/_data/prescriptions.db"
+        owner: "999"
+        group: "999"
+        mode: "0644"
+      ignore_errors: yes
 
     - name: Deploy RxVerify application container
       community.docker.docker_container:
@@ -156,9 +114,7 @@
         env:
           SECRET_KEY: "{{ app_secret_key }}"
           FLASK_ENV: "production"
-          DATABASE_URL: "postgresql://{{ postgres_user }}:{{ postgres_password }}@{{ postgres_host }}:{{ postgres_port }}/{{ postgres_db }}"
-        networks:
-          - name: rxverify-network
+          DATABASE_URL: "{{ database_url }}"
         # Wait for container to be healthy
         healthcheck:
           test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=5)"]
@@ -166,7 +122,6 @@
           timeout: 10s
           retries: 3
           start_period: 15s
-        no_log: true
 
     - name: Check the application health endpoint on EC2
       ansible.builtin.uri:

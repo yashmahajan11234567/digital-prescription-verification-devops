@@ -33,7 +33,7 @@ def get_terraform_output(tf_dir: Path, output_name: str) -> str:
 def main():
     parser = argparse.ArgumentParser(description="Generate Ansible inventory from Terraform outputs")
     parser.add_argument("--tf-output-dir", required=True, help="Path to Terraform output directory")
-    parser.add_argument("--key-file", default="~/.ssh/your-key.pem", help="SSH private key file path")
+    parser.add_argument("--key-file", default=None, help="SSH private key file path (defaults to ~/.ssh/<terraform key_name>)")
     args = parser.parse_args()
 
     tf_dir = Path(args.tf_output_dir).resolve()
@@ -43,17 +43,22 @@ def main():
         sys.exit(1)
 
     # Get EC2 public IP from Terraform
-    public_ip = get_terraform_output(tf_dir, "instance_public_ip")
+    def get_public_ip():
+        return get_terraform_output(tf_dir, "instance_public_ip")
+    public_ip = get_public_ip()
 
-    # Get key name from Terraform variables (optional)
+    # Get key name from Terraform variables (optional) and derive the key file path.
+    # This keeps the generated inventory consistent with the Terraform key_name.
     try:
         key_name = get_terraform_output(tf_dir, "key_name")
     except SystemExit:
         key_name = "your-key"
 
+    key_file = args.key_file or f"~/.ssh/{key_name}"
+
     # Generate inventory
     inventory = f"""[web]
-{public_ip} ansible_user=ubuntu ansible_ssh_private_key_file={args.key_file} ansible_ssh_common_args='-o StrictHostKeyChecking=accept-new'
+{public_ip} ansible_user=ubuntu ansible_ssh_private_key_file={key_file} ansible_ssh_common_args='-o StrictHostKeyChecking=accept-new'
 
 # Terraform outputs:
 # instance_public_ip = {public_ip}

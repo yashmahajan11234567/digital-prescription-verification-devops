@@ -7,6 +7,20 @@ This playbook configures the EC2 server and deploys RxVerify:
 3. Builds the image on EC2.
 4. Runs it on port 80 with a persistent Docker volume for SQLite data.
 
+## Architecture
+
+```
+Internet
+  → EC2 :80
+    → Docker container rxverify-app :5000
+      → SQLite persistent volume (/app/instance, db = prescriptions.db)
+```
+
+The database is SQLite, stored in the `rxverify_data` volume mounted at
+`/app/instance`. There is no PostgreSQL dependency in production. The
+application reads `DATABASE_URL` (default `sqlite:///instance/prescriptions.db`),
+which resolves to `/app/instance/prescriptions.db` inside the container.
+
 ## Prepare local-only files
 
 ```bash

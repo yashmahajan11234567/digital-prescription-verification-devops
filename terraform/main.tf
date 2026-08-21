@@ -123,5 +123,11 @@ resource "aws_instance" "rxverify" {
     Project = var.project_name
   }
 
+  lifecycle {
+    ignore_changes = [
+      ami
+    ]
+  }
+
   depends_on = [aws_route.internet_access]
 }

@@ -7,7 +7,7 @@ variable "aws_region" {
 variable "aws_profile" {
   description = "Name of the locally configured AWS CLI profile."
   type        = string
-  default     = "fa1"
+  default     = "friend"
 }
 
 variable "project_name" {
@@ -19,13 +19,13 @@ variable "project_name" {
 variable "key_name" {
   description = "Name of the existing EC2 key pair used for SSH access."
   type        = string
-  default     = "fa1-key"
+  default     = "fa1-key-new"
 }
 
 variable "allowed_ssh_cidr" {
   description = "Your current public IPv4 address in CIDR form, for example 203.0.113.10/32."
   type        = string
-  default     = "0.0.0.0/0"
+  default     = "122.170.199.47/32"
 }
 
 variable "instance_type" {
