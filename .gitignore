@@ -11,3 +11,24 @@ ansible/inventory.ini
 ansible/secrets.yml
 *.pem
 .DS_Store
+
+# Debug/test artifacts (not for submission)
+*_test.db
+*_fixture*.db
+*_rel.db
+controlled_test.db
+fresh_test.db
+isolated_test.db
+isolation_test.db
+notification_test.db
+test.db
+debug_*.py
+debug_*.db
+replicate_test.py
+test_bug.py
+test_fresh_table.py
+test_notifications.py
+test_postgres_seeding.py
+test_truncate_table.py
+*_cookies.txt
+check_schema.py

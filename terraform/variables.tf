@@ -25,6 +25,7 @@ variable "key_name" {
 variable "allowed_ssh_cidr" {
   description = "Your current public IPv4 address in CIDR form, for example 203.0.113.10/32."
   type        = string
+  default     = "0.0.0.0/0"
 }
 
 variable "instance_type" {

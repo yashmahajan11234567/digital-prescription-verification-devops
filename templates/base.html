@@ -11,13 +11,27 @@
       <a class="brand" href="{{ url_for('home') }}"><span>✚</span> RxVerify</a>
       <nav>
         {% if current_user.role == 'doctor' %}
-          <a href="{{ url_for('issue_prescription') }}">Issue</a><a href="{{ url_for('prescriptions') }}">Records</a>
+          <a href="{{ url_for('doctor.issue_prescription') }}">Issue</a>
+          <a href="{{ url_for('doctor.prescriptions') }}">Records</a>
+          {% if unread_count and unread_count > 0 %}
+            <a href="{{ url_for('doctor.notifications') }}" class="notification-link">Notifications ({{ unread_count }})</a>
+          {% else %}
+            <a href="{{ url_for('doctor.notifications') }}">Notifications</a>
+          {% endif %}
         {% elif current_user.role == 'pharmacist' %}
-          <a href="{{ url_for('verify_form') }}">Verify</a>
+          <a href="{{ url_for('pharmacist.verify_form') }}">Verify</a>
+        {% elif current_user.role == 'admin' %}
+          <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
+          <a href="{{ url_for('admin.hospitals') }}">Hospitals</a>
+          {% if unread_count and unread_count > 0 %}
+            <a href="{{ url_for('admin.notifications') }}" class="notification-link">Notifications ({{ unread_count }})</a>
+          {% else %}
+            <a href="{{ url_for('admin.notifications') }}">Notifications</a>
+          {% endif %}
         {% endif %}
         {% if current_user.role %}
           <span class="user-label">{{ current_user.name }}</span>
-          <form class="logout-form" method="post" action="{{ url_for('logout') }}"><button type="submit">Sign out</button></form>
+          <form class="logout-form" method="post" action="{{ url_for('auth.logout') }}"><button type="submit">Sign out</button></form>
         {% endif %}
       </nav>
     </header>
@@ -30,5 +44,7 @@
       {% block content %}{% endblock %}
     </main>
     <footer>Local MVP · Digital Prescription Verification System</footer>
+
+    {% block scripts %}{% endblock %}
   </body>
 </html>

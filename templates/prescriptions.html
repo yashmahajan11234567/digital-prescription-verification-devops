@@ -1,17 +1,93 @@
 {% extends "base.html" %}
 {% block title %}Prescription records | RxVerify{% endblock %}
 {% block content %}
-<div class="page-heading"><p class="eyebrow">CLINIC PORTAL</p><h1>Prescription records</h1><p>Use this local prototype view to demonstrate issuance and revocation.</p></div>
+<div class="page-heading">
+  <p class="eyebrow">CLINIC PORTAL</p>
+  <h1>Prescription records</h1>
+  <p>Use this local prototype view to demonstrate issuance, revocation, and received status.</p>
+</div>
+
+<div class="filter-bar">
+  <form method="get" class="filter-form">
+    <label>Filter by date
+      <input type="date" name="date" value="{{ date_filter or '' }}">
+    </label>
+    <button class="button" type="submit">Filter</button>
+    {% if date_filter %}
+    <a class="button secondary" href="{{ url_for('doctor.prescriptions') }}">Clear</a>
+    {% endif %}
+  </form>
+</div>
+
+{% if unread_count and unread_count > 0 %}
+  <div class="notification-badge">
+    <a href="{{ url_for('doctor.notifications') }}">You have {{ unread_count }} unread notification{{ 's' if unread_count != 1 else '' }}</a>
+  </div>
+{% endif %}
+
 {% if prescriptions %}
   <div class="record-list">
   {% for prescription in prescriptions %}
     <article class="card record">
-      <div><span class="pill {{ prescription['status'] }}">{{ prescription['status'] }}</span><h2>{{ prescription['medicine_name'] }}</h2><p>{{ prescription['patient_name'] }} · {{ prescription['doctor_name'] }}</p><code>{{ prescription['verification_id'] }}</code></div>
-      <div class="record-actions"><a href="{{ url_for('verification_result', verification_id=prescription['verification_id']) }}">View verification</a>{% if prescription['status'] == 'active' %}<form method="post" action="{{ url_for('revoke_prescription', prescription_id=prescription['id']) }}"><button class="link-button" type="submit">Revoke</button></form>{% endif %}</div>
+      <div>
+        <span class="pill {{ prescription['status'] }}">{{ prescription['status']|upper }}</span>
+        <h2>{{ prescription['medicine_name'] }}</h2>
+        <p>{{ prescription['patient_name'] }} · {{ prescription['doctor_name'] }} · {{ prescription['clinic_name'] }}</p>
+        <code>{{ prescription['verification_id'] }}</code>
+        {% if prescription['status'] == 'received' %}
+          <p class="received-info">
+            Received: {{ prescription['received_at'][:19] if prescription['received_at'] else 'N/A' }}
+            {% if prescription['received_by_name'] %}
+              by {{ prescription['received_by_name'] }}
+            {% endif %}
+          </p>
+        {% endif %}
+        <p class="muted">Issued: {{ prescription['issue_date'] }} · Created: {{ prescription['created_at'][:19] if prescription['created_at'] else 'N/A' }}</p>
+      </div>
+      <div class="record-actions">
+        <a href="{{ url_for('pharmacist.verification_result', verification_id=prescription['verification_id']) }}">View verification</a>
+        {% if prescription['status'] == 'active' %}
+        <form method="post" action="{{ url_for('doctor.revoke_prescription', prescription_id=prescription['id']) }}">
+          <button class="link-button" type="submit">Revoke</button>
+        </form>
+        {% endif %}
+      </div>
     </article>
   {% endfor %}
   </div>
 {% else %}
-  <section class="card empty"><h2>No prescriptions yet.</h2><a class="button" href="{{ url_for('issue_prescription') }}">Issue the first one</a></section>
+  <section class="card empty"><h2>No prescriptions found{% if date_filter %} for {{ date_filter }}{% endif %}.</h2><a class="button" href="{{ url_for('doctor.issue_prescription') }}">Issue the first one</a></section>
 {% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Poll for unread notification count every 5 seconds
+  (function() {
+    const pollUrl = "{{ url_for('doctor.notifications_poll') }}";
+    const navNotificationLink = document.querySelector('nav a[href*="notifications"]');
+
+    function pollNotifications() {
+      fetch(pollUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (navNotificationLink) {
+            if (data.unread_count > 0) {
+              navNotificationLink.classList.add('notification-link');
+              navNotificationLink.textContent = `Notifications (${data.unread_count})`;
+            } else {
+              navNotificationLink.classList.remove('notification-link');
+              navNotificationLink.textContent = 'Notifications';
+            }
+          }
+        })
+        .catch(err => console.debug('Notification poll failed:', err));
+    }
+
+    // Initial poll
+    pollNotifications();
+    // Poll every 5 seconds
+    setInterval(pollNotifications, 5000);
+  })();
+</script>
 {% endblock %}

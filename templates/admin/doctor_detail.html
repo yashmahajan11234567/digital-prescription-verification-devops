@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}{{ doctor.name }} | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>{{ doctor.name }}</h1>
+  <p>{{ hospital.name }}</p>
+  <a class="button secondary" href="{{ url_for('admin.hospital_detail', hospital_id=hospital.id) }}">← Back to Hospital</a>
+</div>
+
+{% if date_filter %}
+  <div class="filter-bar">
+    <form method="get" class="filter-form">
+      <label>Filter by date
+        <input type="date" name="date" value="{{ date_filter }}">
+      </label>
+      <button class="button" type="submit">Filter</button>
+      <a class="button secondary" href="{{ url_for('admin.doctor_detail', hospital_id=hospital.id, doctor_id=doctor.id) }}">Clear</a>
+    </form>
+  </div>
+{% else %}
+  <div class="filter-bar">
+    <form method="get" class="filter-form">
+      <label>Filter by date
+        <input type="date" name="date">
+      </label>
+      <button class="button" type="submit">Filter</button>
+    </form>
+  </div>
+{% endif %}
+
+{% if prescriptions %}
+  <div class="record-list">
+    {% for prescription in prescriptions %}
+    <article class="card record">
+      <div>
+        <span class="pill {{ prescription.status }}">{{ prescription.status|upper }}</span>
+        <h2>{{ prescription.medicine_name }}</h2>
+        <p>{{ prescription.patient_name }} · {{ prescription.doctor_name }} · {{ prescription.clinic_name }}</p>
+        <code>{{ prescription.verification_id }}</code>
+        {% if prescription.status == 'received' %}
+          <p class="received-info">
+            Received: {{ prescription.received_at[:19] if prescription.received_at else 'N/A' }}
+            by Pharmacist ID: {{ prescription.received_by_user_id or 'N/A' }}
+          </p>
+        {% endif %}
+        <p class="muted">Issued: {{ prescription.issue_date }} · Created: {{ prescription.created_at[:19] if prescription.created_at else 'N/A' }}</p>
+      </div>
+      <div class="record-actions">
+        <a href="{{ url_for('pharmacist.verification_result', verification_id=prescription.verification_id) }}">View Verification</a>
+      </div>
+    </article>
+    {% endfor %}
+  </div>
+{% else %}
+  <section class="card empty">
+    <h2>No prescriptions found{% if date_filter %} for {{ date_filter }}{% endif %}.</h2>
+  </section>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Poll for unread notification count every 5 seconds
+  (function() {
+    const pollUrl = "{{ url_for('admin.notifications_poll') }}";
+    const navNotificationLink = document.querySelector('nav a[href*="notifications"]');
+
+    function pollNotifications() {
+      fetch(pollUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (navNotificationLink) {
+            if (data.unread_count > 0) {
+              navNotificationLink.classList.add('notification-link');
+              navNotificationLink.textContent = `Notifications (${data.unread_count})`;
+            } else {
+              navNotificationLink.classList.remove('notification-link');
+              navNotificationLink.textContent = 'Notifications';
+            }
+          }
+        })
+        .catch(err => console.debug('Notification poll failed:', err));
+    }
+
+    // Initial poll
+    pollNotifications();
+    // Poll every 5 seconds
+    setInterval(pollNotifications, 5000);
+  })();
+</script>
+{% endblock %}

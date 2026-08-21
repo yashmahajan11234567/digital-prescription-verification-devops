@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Admin Dashboard | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>Dashboard</h1>
+  <p>System-wide overview of hospitals, users, and prescriptions.</p>
+</div>
+
+<div class="stats-grid">
+  <article class="stat-card">
+    <span class="stat-value">{{ stats.hospitals }}</span>
+    <span class="stat-label">Hospitals</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-value">{{ stats.doctors }}</span>
+    <span class="stat-label">Doctors</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-value">{{ stats.pharmacists }}</span>
+    <span class="stat-label">Pharmacists</span>
+  </article>
+  <article class="stat-card">
+    <span class="stat-value">{{ stats.prescriptions }}</span>
+    <span class="stat-label">Total Prescriptions</span>
+  </article>
+  <article class="stat-card active">
+    <span class="stat-value">{{ stats.active }}</span>
+    <span class="stat-label">Active</span>
+  </article>
+  <article class="stat-card revoked">
+    <span class="stat-value">{{ stats.revoked }}</span>
+    <span class="stat-label">Revoked</span>
+  </article>
+  <article class="stat-card received">
+    <span class="stat-value">{{ stats.received }}</span>
+    <span class="stat-label">Received</span>
+  </article>
+</div>
+
+<section class="card">
+  <h2>Quick Navigation</h2>
+  <div class="nav-links">
+    <a class="button" href="{{ url_for('admin.hospitals') }}">View All Hospitals</a>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+  // Poll for unread notification count every 5 seconds
+  (function() {
+    const pollUrl = "{{ url_for('admin.notifications_poll') }}";
+    const navNotificationLink = document.querySelector('nav a[href*="notifications"]');
+
+    function pollNotifications() {
+      fetch(pollUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (navNotificationLink) {
+            if (data.unread_count > 0) {
+              navNotificationLink.classList.add('notification-link');
+              navNotificationLink.textContent = `Notifications (${data.unread_count})`;
+            } else {
+              navNotificationLink.classList.remove('notification-link');
+              navNotificationLink.textContent = 'Notifications';
+            }
+          }
+        })
+        .catch(err => console.debug('Notification poll failed:', err));
+    }
+
+    // Initial poll
+    pollNotifications();
+    // Poll every 5 seconds
+    setInterval(pollNotifications, 5000);
+  })();
+</script>
+{% endblock %}

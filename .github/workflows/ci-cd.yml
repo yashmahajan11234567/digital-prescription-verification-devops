@@ -1,0 +1,331 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Target environment for deployment'
+        required: true
+        default: 'production'
+        type: choice
+        options:
+          - production
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  PYTHON_VERSION: "3.12"
+  POSTGRES_VERSION: "16-alpine"
+  POSTGRES_DB: rxverify
+  POSTGRES_USER: postgres
+  POSTGRES_PASSWORD: testpassword
+
+jobs:
+  validation:
+    name: Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Validate project environment
+        run: |
+          python -c "import flask; import gunicorn; import psycopg2; import pytest; print('All imports successful')"
+
+  postgresql-tests:
+    name: PostgreSQL Tests
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:${{ env.POSTGRES_VERSION }}
+        env:
+          POSTGRES_DB: ${{ env.POSTGRES_DB }}
+          POSTGRES_USER: ${{ env.POSTGRES_USER }}
+          POSTGRES_PASSWORD: ${{ env.POSTGRES_PASSWORD }}
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd="pg_isready -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }}"
+          --health-interval=5s
+          --health-timeout=5s
+          --health-retries=5
+          --health-start-period=10s
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install -r requirements-dev.txt
+
+      - name: Wait for PostgreSQL to be ready
+        run: |
+          for i in {1..30}; do
+            if pg_isready -h localhost -p 5432 -U ${{ env.POSTGRES_USER }} -d ${{ env.POSTGRES_DB }}; then
+              echo "PostgreSQL is ready"
+              break
+            fi
+            echo "Waiting for PostgreSQL... ($i/30)"
+            sleep 2
+          done
+
+      - name: Run tests with PostgreSQL
+        env:
+          DATABASE_URL: postgresql://${{ env.POSTGRES_USER }}:${{ env.POSTGRES_PASSWORD }}@localhost:5432/${{ env.POSTGRES_DB }}
+          FLASK_ENV: testing
+          SECRET_KEY: test-secret-key
+          TESTING: "1"
+        run: |
+          python -m pytest tests/ -q --tb=short -x
+
+  docker-validation:
+    name: Docker Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate Docker Compose configuration
+        run: docker compose config
+
+      - name: Build Docker image
+        run: docker build -t rxverify:sha-${{ github.sha }} .
+
+      - name: Start services with Docker Compose
+        run: |
+          docker compose up -d --build
+          sleep 10
+
+      - name: Wait for application health
+        run: |
+          for i in {1..30}; do
+            if curl -f http://localhost:5001/health 2>/dev/null; then
+              echo "Application is healthy"
+              break
+            fi
+            echo "Waiting for application... ($i/30)"
+            sleep 2
+          done
+
+      - name: Smoke test health endpoint
+        run: |
+          curl -f http://localhost:5001/health
+
+      - name: Stop services
+        if: always()
+        run: docker compose down
+
+  terraform-validation:
+    name: Terraform Validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive
+
+      - name: Terraform Init
+        run: terraform init -backend=false
+
+      - name: Terraform Validate
+        run: terraform validate
+
+  ansible-validation:
+    name: Ansible Validation
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ansible
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible-core
+
+      - name: Ansible Syntax Check
+        run: ansible-playbook --syntax-check deploy.yml
+
+      - name: Validate Ansible Configuration
+        run: ansible-config dump --only-changed
+
+  # Deployment jobs - require manual approval
+  terraform-plan:
+    name: Terraform Plan
+    needs: [validation, postgresql-tests, docker-validation, terraform-validation, ansible-validation]
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Terraform Init
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        run: terraform plan -out=tfplan
+
+      - name: Upload Terraform Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/tfplan
+          retention-days: 7
+
+  terraform-apply:
+    name: Terraform Apply
+    needs: terraform-plan
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    defaults:
+      run:
+        working-directory: terraform
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Download Terraform Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: tfplan
+          path: terraform/
+
+      - name: Terraform Apply
+        run: terraform apply -auto-approve tfplan
+
+      - name: Output Terraform Results
+        run: |
+          echo "instance_public_ip=$(terraform output -raw instance_public_ip)"
+          echo "website_url=$(terraform output -raw website_url)"
+
+  ansible-deploy:
+    name: Ansible Deploy
+    needs: terraform-apply
+    if: github.event_name == 'workflow_dispatch'
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Set up Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.9.0
+
+      - name: Get Terraform Outputs
+        id: tf-outputs
+        run: |
+          cd terraform
+          echo "instance_public_ip=$(terraform output -raw instance_public_ip)" >> $GITHUB_OUTPUT
+          echo "website_url=$(terraform output -raw website_url)" >> $GITHUB_OUTPUT
+
+      - name: Generate Ansible Inventory
+        id: inventory
+        run: |
+          cd ansible
+          python generate_inventory.py --tf-output-dir ../terraform --key-file "${{ secrets.SSH_PRIVATE_KEY }}" > inventory.ini
+          cat inventory.ini
+
+      - name: Install Ansible
+        run: |
+          python -m pip install --upgrade pip
+          pip install ansible-core docker
+
+      - name: Run Ansible Playbook
+        env:
+          ANSIBLE_HOST_KEY_CHECKING: "False"
+        run: |
+          cd ansible
+          ansible-playbook -i inventory.ini deploy.yml
+
+      - name: Verify Deployment Health
+        run: |
+          echo "Waiting for application to be ready..."
+          for i in {1..30}; do
+            if curl -f "${{ steps.tf-outputs.outputs.website_url }}/health" 2>/dev/null; then
+              echo "Deployment successful! Application is healthy."
+              break
+            fi
+            echo "Waiting for application... ($i/30)"
+            sleep 10
+          done
+
+      - name: Smoke Test
+        run: |
+          # Test login page
+          curl -f "${{ steps.tf-outputs.outputs.website_url }}/login" 2>/dev/null || exit 1
+          echo "All smoke tests passed!"

@@ -2,18 +2,104 @@
 {% block title %}Verification result | RxVerify{% endblock %}
 {% block content %}
 {% if prescription %}
-  <div class="status {{ prescription['status'] }}">{% if prescription['status'] == 'active' %}✓ {% if current_user.role == 'doctor' %}Prescription created{% else %}Valid prescription{% endif %}{% else %}✕ Prescription revoked{% endif %}</div>
-  <div class="page-heading"><p class="eyebrow">{{ prescription['verification_id'] }}</p><h1>{% if prescription['status'] == 'active' %}{% if current_user.role == 'doctor' %}Prescription issued successfully{% else %}Prescription verified{% endif %}{% else %}Do not dispense{% endif %}</h1>{% if current_user.role == 'doctor' and prescription['status'] == 'active' %}<p>Share this verification ID with the pharmacist: <strong>{{ prescription['verification_id'] }}</strong></p>{% endif %}</div>
+  <div class="status {{ prescription['status'] }}">
+    {% if prescription['status'] == 'active' %}
+      ✓ {% if current_user.role == 'doctor' %}Prescription created{% else %}Valid prescription{% endif %}
+    {% elif prescription['status'] == 'received' %}
+      ✓ Medicine received{% if prescription['received_at'] %} on {{ prescription['received_at'][:19] }}{% endif %}
+      {% if prescription['received_by_name'] %} by {{ prescription['received_by_name'] }}{% endif %}
+    {% else %}
+      ✕ Prescription revoked
+    {% endif %}
+  </div>
+
+  <div class="page-heading">
+    <p class="eyebrow">{{ prescription['verification_id'] }}</p>
+    <h1>
+      {% if prescription['status'] == 'active' %}
+        {% if current_user.role == 'doctor' %}Prescription issued successfully{% else %}Prescription verified{% endif %}
+      {% elif prescription['status'] == 'received' %}
+        Medicine Received
+      {% else %}
+        Do not dispense
+      {% endif %}
+    </h1>
+    {% if current_user.role == 'doctor' and prescription['status'] == 'active' %}
+      <p>Share this verification ID with the pharmacist: <strong>{{ prescription['verification_id'] }}</strong></p>
+    {% endif %}
+  </div>
+
   <section class="card details">
     <div><span>Patient</span><strong>{{ prescription['patient_name'] }}</strong><small>{{ prescription['patient_reference'] }}</small></div>
     <div><span>Prescribed by</span><strong>{{ prescription['doctor_name'] }}</strong><small>{{ prescription['clinic_name'] }}</small></div>
     <div><span>Medicine</span><strong>{{ prescription['medicine_name'] }}</strong><small>{{ prescription['dosage'] }}</small></div>
     <div><span>Issue date</span><strong>{{ prescription['issue_date'] }}</strong><small>Current status: {{ prescription['status'] }}</small></div>
+
+    {% if prescription['status'] == 'received' %}
+      <div><span>Received at</span><strong>{{ prescription['received_at'][:19] if prescription['received_at'] else 'N/A' }}</strong></div>
+      {% if prescription['received_by_name'] %}
+        <div><span>Received by</span><strong>{{ prescription['received_by_name'] }}</strong></div>
+      {% endif %}
+    {% endif %}
+
     <div class="full"><span>Instructions</span><strong>{{ prescription['instructions'] }}</strong></div>
   </section>
+
+  {% if current_user.role == 'pharmacist' and prescription['status'] == 'active' %}
+    <section class="card actions">
+      <form method="post" action="{{ url_for('pharmacist.receive_medicine', prescription_id=prescription['id']) }}">
+        <button class="button" type="submit">Mark Medicine Received</button>
+      </form>
+    </section>
+  {% elif current_user.role == 'pharmacist' and prescription['status'] == 'received' %}
+    <section class="card actions">
+      <p class="muted">This prescription has already been marked as received.</p>
+      {% if prescription['received_by_name'] %}
+        <p class="muted">Received by: {{ prescription['received_by_name'] }} on {{ prescription['received_at'][:19] if prescription['received_at'] else 'N/A' }}</p>
+      {% endif %}
+    </section>
+  {% elif current_user.role == 'pharmacist' and prescription['status'] == 'revoked' %}
+    <section class="card actions">
+      <p class="muted">This prescription has been revoked and cannot be marked as received.</p>
+    </section>
+  {% endif %}
 {% else %}
   <div class="status revoked">✕ No matching prescription</div>
   <div class="page-heading"><p class="eyebrow">{{ verification_id|upper }}</p><h1>We could not verify this ID.</h1><p>Check the ID and try again. It may not have been issued by this system.</p></div>
-  <a class="button" href="{{ url_for('verify_form') }}">Try another ID</a>
+  <a class="button" href="{{ url_for('pharmacist.verify_form') }}">Try another ID</a>
+{% endif %}
+{% endblock %}
+
+{% block scripts %}
+{% if current_user.role == 'doctor' %}
+<script>
+  // Poll for unread notification count every 5 seconds
+  (function() {
+    const pollUrl = "{{ url_for('doctor.notifications_poll') }}";
+    const navNotificationLink = document.querySelector('nav a[href*="notifications"]');
+
+    function pollNotifications() {
+      fetch(pollUrl)
+        .then(response => response.json())
+        .then(data => {
+          if (navNotificationLink) {
+            if (data.unread_count > 0) {
+              navNotificationLink.classList.add('notification-link');
+              navNotificationLink.textContent = `Notifications (${data.unread_count})`;
+            } else {
+              navNotificationLink.classList.remove('notification-link');
+              navNotificationLink.textContent = 'Notifications';
+            }
+          }
+        })
+        .catch(err => console.debug('Notification poll failed:', err));
+    }
+
+    // Initial poll
+    pollNotifications();
+    // Poll every 5 seconds
+    setInterval(pollNotifications, 5000);
+  })();
+</script>
 {% endif %}
 {% endblock %}

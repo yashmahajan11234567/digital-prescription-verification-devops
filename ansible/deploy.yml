@@ -8,7 +8,14 @@
     app_directory: /opt/rxverify
     image_name: rxverify:latest
     container_name: rxverify-app
+    postgres_container_name: rxverify-postgres
+    postgres_volume: rxverify_postgres_data
     data_volume: rxverify_data
+    # Database configuration - override via secrets.yml or environment
+    postgres_host: "postgres"
+    postgres_port: "5432"
+    postgres_db: "rxverify"
+    postgres_user: "postgres"
 
   pre_tasks:
     - name: Ensure a non-placeholder app secret is supplied
@@ -18,19 +25,31 @@
           - app_secret_key | length >= 32
         fail_msg: "Create ansible/secrets.yml with a secure app_secret_key before deployment."
 
+    - name: Ensure postgres_password is supplied and not the default
+      ansible.builtin.assert:
+        that:
+          - postgres_password is defined
+          - postgres_password != "changeme"
+          - postgres_password != "change-me"
+          - postgres_password | length >= 16
+        fail_msg: "Create ansible/secrets.yml with a secure postgres_password (minimum 16 characters) before deployment."
+
   tasks:
     - name: Update Ubuntu package metadata
       ansible.builtin.apt:
         update_cache: true
         cache_valid_time: 3600
 
-    - name: Install Docker Engine
+    - name: Install Docker Engine and Python Docker SDK
       ansible.builtin.apt:
-        name: docker.io
+        name:
+          - docker.io
+          - python3-docker
         state: present
+      register: docker_install
 
-    - name: Start Docker now and on boot
-      ansible.builtin.service:
+    - name: Ensure Docker service is started and enabled
+      ansible.builtin.systemd:
         name: docker
         state: started
         enabled: true
@@ -48,8 +67,15 @@
         mode: "0644"
       loop:
         - app.py
+        - config.py
         - requirements.txt
         - Dockerfile
+
+    - name: Copy application source code
+      ansible.builtin.copy:
+        src: ../src/
+        dest: "{{ app_directory }}/src/"
+        mode: "0644"
 
     - name: Copy application templates
       ansible.builtin.copy:
@@ -69,36 +95,78 @@
         chdir: "{{ app_directory }}"
       changed_when: true
 
+    - name: Create Docker network for RxVerify and PostgreSQL
+      community.docker.docker_network:
+        name: rxverify-network
+      register: network_create
+
+    - name: Create persistent Docker volume for PostgreSQL data
+      community.docker.docker_volume:
+        name: "{{ postgres_volume }}"
+      register: pg_volume_create
+
     - name: Create persistent Docker volume for prescription data
-      ansible.builtin.command: docker volume create {{ data_volume }}
+      community.docker.docker_volume:
+        name: "{{ data_volume }}"
       register: volume_create
-      changed_when: volume_create.stdout == data_volume
 
-    - name: Remove a previous application container, if one exists
-      ansible.builtin.command: docker rm --force {{ container_name }}
-      register: previous_container
-      failed_when: previous_container.rc not in [0, 1]
-      changed_when: previous_container.rc == 0
+    - name: Deploy PostgreSQL container
+      community.docker.docker_container:
+        name: "{{ postgres_container_name }}"
+        image: "postgres:16-alpine"
+        state: started
+        restart_policy: unless-stopped
+        env:
+          POSTGRES_DB: "{{ postgres_db }}"
+          POSTGRES_USER: "{{ postgres_user }}"
+          POSTGRES_PASSWORD: "{{ postgres_password }}"
+        volumes:
+          - "{{ postgres_volume }}:/var/lib/postgresql/data"
+        networks:
+          - name: rxverify-network
+        healthcheck:
+          test: ["CMD-SHELL", "pg_isready -U {{ postgres_user }} -d {{ postgres_db }}"]
+          interval: 5s
+          timeout: 5s
+          retries: 5
+          start_period: 10s
+        no_log: true
+      register: pg_container
 
-    - name: Run the RxVerify container on website port 80
-      ansible.builtin.command:
-        argv:
-          - docker
-          - run
-          - --detach
-          - --name
-          - "{{ container_name }}"
-          - --restart
-          - unless-stopped
-          - --publish
+    - name: Wait for PostgreSQL to be healthy
+      ansible.builtin.command: >
+        docker exec {{ postgres_container_name }}
+        pg_isready -U {{ postgres_user }} -d {{ postgres_db }}
+      register: pg_ready
+      retries: 30
+      delay: 5
+      until: pg_ready.rc == 0
+      changed_when: false
+
+    - name: Deploy RxVerify application container
+      community.docker.docker_container:
+        name: "{{ container_name }}"
+        image: "{{ image_name }}"
+        state: started
+        restart_policy: unless-stopped
+        published_ports:
           - "80:5000"
-          - --volume
+        volumes:
           - "{{ data_volume }}:/app/instance"
-          - --env
-          - "SECRET_KEY={{ app_secret_key }}"
-          - "{{ image_name }}"
-      no_log: true
-      changed_when: true
+        env:
+          SECRET_KEY: "{{ app_secret_key }}"
+          FLASK_ENV: "production"
+          DATABASE_URL: "postgresql://{{ postgres_user }}:{{ postgres_password }}@{{ postgres_host }}:{{ postgres_port }}/{{ postgres_db }}"
+        networks:
+          - name: rxverify-network
+        # Wait for container to be healthy
+        healthcheck:
+          test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5000/health', timeout=5)"]
+          interval: 30s
+          timeout: 10s
+          retries: 3
+          start_period: 15s
+        no_log: true
 
     - name: Check the application health endpoint on EC2
       ansible.builtin.uri:
@@ -106,6 +174,9 @@
         return_content: true
         status_code: 200
       register: healthcheck
+      retries: 10
+      delay: 5
+      until: healthcheck.status == 200
 
     - name: Show health result
       ansible.builtin.debug:

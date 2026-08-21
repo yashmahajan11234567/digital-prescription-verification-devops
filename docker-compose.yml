@@ -1,4 +1,23 @@
 services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: rxverify-postgres
+    environment:
+      - POSTGRES_DB=${POSTGRES_DB:-rxverify}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-me}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    ports:
+      - "5433:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres} -d ${POSTGRES_DB:-rxverify}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    restart: unless-stopped
+
   rxverify:
     build: .
     container_name: rxverify-app
@@ -6,11 +25,24 @@ services:
       # Host port 5001 avoids macOS Control Center, which reserves port 5000.
       - "5001:5000"
     environment:
-      # Replace this with a secure value before any cloud deployment.
-      SECRET_KEY: local-docker-demo-change-me
+      # Load from .env if present, otherwise use defaults
+      - FLASK_ENV=${FLASK_ENV:-development}
+      - SECRET_KEY=${SECRET_KEY:-local-docker-dev-change-me}
+      - FLASK_DEBUG=${FLASK_DEBUG:-1}
+      - TESTING=${TESTING:-0}
+      - POSTGRES_DB=${POSTGRES_DB:-rxverify}
+      - POSTGRES_USER=${POSTGRES_USER:-postgres}
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-change-me}
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
+      - DATABASE_URL=postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-change-me}@postgres:5432/${POSTGRES_DB:-rxverify}
     volumes:
       - prescription_data:/app/instance
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
 volumes:
+  postgres_data:
   prescription_data:
