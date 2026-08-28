@@ -1,35 +1,34 @@
 {% extends "base.html" %}
-{% block title %}Hospitals | RxVerify{% endblock %}
+{% block title %}Pharmacists | RxVerify{% endblock %}
 {% block content %}
 <div class="page-heading">
   <p class="eyebrow">ADMIN PORTAL</p>
-  <h1>Hospitals</h1>
-  <p>{{ hospitals|length }} hospital{{ 's' if hospitals|length != 1 else '' }} registered in the system.</p>
-  <a class="button" href="{{ url_for('admin.add_hospital') }}">Add Hospital</a>
+  <h1>Pharmacists</h1>
+  <p>{{ pharmacists|length }} pharmacist{{ 's' if pharmacists|length != 1 else '' }} registered in the system.</p>
+  <a class="button" href="{{ url_for('admin.add_pharmacist') }}">Add Pharmacist</a>
 </div>
 
-{% if hospitals %}
+{% if pharmacists %}
   <div class="record-list">
-    {% for hospital in hospitals %}
+    {% for pharmacist in pharmacists %}
     <article class="card record">
       <div>
-        <h2>{{ hospital.name }}</h2>
-        <p>{{ hospital.address or 'No address' }} · {{ hospital.phone or 'No phone' }}</p>
-        <p class="muted">{{ hospital.email or 'No email' }}</p>
-        <p class="counts">
-          <span class="pill">{{ hospital.doctor_count }} doctor{{ 's' if hospital.doctor_count != 1 else '' }}</span>
-          <span class="pill">{{ hospital.pharmacist_count }} pharmacist{{ 's' if hospital.pharmacist_count != 1 else '' }}</span>
+        <h3>{{ pharmacist.pharmacist_identifier or '—' }} · {{ pharmacist.name }}</h3>
+        <p class="muted">{{ pharmacist.email }}</p>
+        <p>
+          {% if pharmacist.is_active %}
+            <span class="pill active">Active</span>
+          {% else %}
+            <span class="pill">Inactive</span>
+          {% endif %}
         </p>
-      </div>
-      <div class="record-actions">
-        <a href="{{ url_for('admin.hospital_detail', hospital_id=hospital.id) }}">View Details</a>
       </div>
     </article>
     {% endfor %}
   </div>
 {% else %}
   <section class="card empty">
-    <h2>No hospitals registered yet.</h2>
+    <h2>No pharmacists registered yet.</h2>
   </section>
 {% endif %}
 {% endblock %}
@@ -58,9 +57,7 @@
         .catch(err => console.debug('Notification poll failed:', err));
     }
 
-    // Initial poll
     pollNotifications();
-    // Poll every 5 seconds
     setInterval(pollNotifications, 5000);
   })();
 </script>

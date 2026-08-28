@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+{% block title %}Add Pharmacist | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>Add Pharmacist</h1>
+  <a class="button secondary" href="{{ url_for('admin.pharmacists') }}">← Back to Pharmacists</a>
+</div>
+
+<section class="card">
+  <form method="post" action="{{ url_for('admin.add_pharmacist_post') }}" class="form">
+    <label>
+      Pharmacist name
+      <input type="text" name="name" value="{{ (form.name if form else '') }}" required>
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" value="{{ (form.email if form else '') }}" required>
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required>
+      <span class="muted">Minimum 6 characters. A PHARM-XXX ID is assigned automatically.</span>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="button">Create Pharmacist</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

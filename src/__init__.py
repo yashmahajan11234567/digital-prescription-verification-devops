@@ -227,7 +227,8 @@ def create_app(test_config: dict | None = None) -> Flask:
             "role TEXT NOT NULL CHECK (role IN ('doctor', 'pharmacist', 'admin'))",
             "is_active INTEGER NOT NULL DEFAULT 1",
             "created_at TEXT NOT NULL",
-            "updated_at TEXT NOT NULL"
+            "updated_at TEXT NOT NULL",
+            "pharmacist_identifier TEXT UNIQUE"
         ])
 
         # Create hospitals table
@@ -333,6 +334,8 @@ def create_app(test_config: dict | None = None) -> Flask:
             "patient_reference TEXT NOT NULL",
             "doctor_name TEXT NOT NULL",
             "clinic_name TEXT NOT NULL",
+            "doctor_id INTEGER REFERENCES users(id)",
+            "hospital_id INTEGER REFERENCES hospitals(id)",
             "medicine_name TEXT NOT NULL",
             "dosage TEXT NOT NULL",
             "instructions TEXT NOT NULL",
@@ -368,6 +371,22 @@ def create_app(test_config: dict | None = None) -> Flask:
                 pass
             db.rollback()
 
+        # Add pharmacist_identifier column to users table if not exists (idempotent migration)
+        try:
+            if is_postgres:
+                cursor.execute("ALTER TABLE users ADD COLUMN IF NOT EXISTS pharmacist_identifier TEXT UNIQUE")
+            else:
+                # Check if column exists in SQLite
+                cursor.execute("PRAGMA table_info(users)")
+                columns = [row["name"] for row in cursor.fetchall()]
+                if "pharmacist_identifier" not in columns:
+                    cursor.execute("ALTER TABLE users ADD COLUMN pharmacist_identifier TEXT UNIQUE")
+            db.commit()
+        except Exception as e:
+            if "duplicate column" not in str(e).lower() and "already exists" not in str(e).lower():
+                pass
+            db.rollback()
+
         # Add received_at and received_by_user_id columns to prescriptions if not exists (idempotent migration)
         try:
             if is_postgres:
@@ -382,6 +401,27 @@ def create_app(test_config: dict | None = None) -> Flask:
                 columns = [row["name"] for row in cursor.fetchall()]
                 if "received_by_user_id" not in columns:
                     cursor.execute("ALTER TABLE prescriptions ADD COLUMN received_by_user_id INTEGER REFERENCES users(id)")
+            db.commit()
+        except Exception as e:
+            if "duplicate column" not in str(e).lower() and "already exists" not in str(e).lower():
+                pass
+            db.rollback()
+
+        # Add doctor_id and hospital_id columns to prescriptions if not exists (idempotent migration)
+        # Handles EXISTING databases created by older code whose prescriptions table lacks these columns.
+        try:
+            if is_postgres:
+                cursor.execute("ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS doctor_id INTEGER REFERENCES users(id)")
+                cursor.execute("ALTER TABLE prescriptions ADD COLUMN IF NOT EXISTS hospital_id INTEGER REFERENCES hospitals(id)")
+            else:
+                cursor.execute("PRAGMA table_info(prescriptions)")
+                columns = [row["name"] for row in cursor.fetchall()]
+                if "doctor_id" not in columns:
+                    cursor.execute("ALTER TABLE prescriptions ADD COLUMN doctor_id INTEGER REFERENCES users(id)")
+                cursor.execute("PRAGMA table_info(prescriptions)")
+                columns = [row["name"] for row in cursor.fetchall()]
+                if "hospital_id" not in columns:
+                    cursor.execute("ALTER TABLE prescriptions ADD COLUMN hospital_id INTEGER REFERENCES hospitals(id)")
             db.commit()
         except Exception as e:
             if "duplicate column" not in str(e).lower() and "already exists" not in str(e).lower():

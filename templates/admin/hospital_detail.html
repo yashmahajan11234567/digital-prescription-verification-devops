@@ -10,6 +10,7 @@
 
 <section class="card">
   <h2>Doctors ({{ doctors|length }})</h2>
+  <a class="button" href="{{ url_for('admin.add_doctor', hospital_id=hospital.id) }}">Register Doctor</a>
   {% if doctors %}
     <div class="record-list">
       {% for doctor in doctors %}

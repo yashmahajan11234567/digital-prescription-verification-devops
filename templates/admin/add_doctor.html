@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Register Doctor | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>Register Doctor</h1>
+  <p>Hospital: <strong>{{ hospital.name }}</strong></p>
+  <a class="button secondary" href="{{ url_for('admin.hospital_detail', hospital_id=hospital.id) }}">← Back to Hospital</a>
+</div>
+
+<section class="card">
+  <form method="post" action="{{ url_for('admin.add_doctor_post', hospital_id=hospital.id) }}" class="form">
+    <label>
+      Doctor name
+      <input type="text" name="name" value="{{ (form.name if form else '') }}" required>
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" value="{{ (form.email if form else '') }}" required>
+    </label>
+    <label>
+      Password
+      <input type="password" name="password" required>
+      <span class="muted">Minimum 6 characters. Stored hashed, never shown.</span>
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="button">Register Doctor</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

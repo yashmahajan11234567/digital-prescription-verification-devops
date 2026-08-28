@@ -5,8 +5,7 @@
 <form class="card form-grid" method="post">
   <label>Patient name<input name="patient_name" value="{{ form.get('patient_name', '') }}" required></label>
   <label>Patient reference<input name="patient_reference" placeholder="e.g. UHID-1024" value="{{ form.get('patient_reference', '') }}" required></label>
-  <label>Issuing doctor<input name="doctor_name" value="{{ form.get('doctor_name', current_user.name) }}" required></label>
-  <label>Clinic name<input name="clinic_name" value="{{ form.get('clinic_name', '') }}" required></label>
+  <label>Issuing doctor<input name="doctor_name" value="{{ form.get('doctor_name', current_user.name) }}" readonly required></label>
   <label>Medicine name<input name="medicine_name" value="{{ form.get('medicine_name', '') }}" required></label>
   <label>Dosage<input name="dosage" placeholder="e.g. 500 mg, twice daily" value="{{ form.get('dosage', '') }}" required></label>
   <label class="full">Instructions<textarea name="instructions" required>{{ form.get('instructions', '') }}</textarea></label>

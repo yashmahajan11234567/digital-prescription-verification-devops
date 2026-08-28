@@ -35,6 +35,18 @@ def verification_result(verification_id: str):
     # Convert sqlite3.Row to dict for reliable template rendering
     if prescription:
         prescription = dict(prescription)
+        # Get doctor and hospital info using FKs when available, fallback to text fields
+        if prescription.get("doctor_id"):
+            cursor.execute("SELECT name FROM users WHERE id = ?", (prescription["doctor_id"],))
+            doctor = cursor.fetchone()
+            if doctor:
+                prescription["doctor_name"] = doctor["name"]
+        if prescription.get("hospital_id"):
+            cursor.execute("SELECT name FROM hospitals WHERE id = ?", (prescription["hospital_id"],))
+            hospital = cursor.fetchone()
+            if hospital:
+                prescription["clinic_name"] = hospital["name"]
+
         # Get pharmacist info if received
         if prescription["received_by_user_id"]:
             cursor.execute("SELECT name FROM users WHERE id = ?", (prescription["received_by_user_id"],))
@@ -119,21 +131,36 @@ def receive_medicine(prescription_id: int):
     notification_created_count = 0
 
     # Create notification for the prescribing doctor
-    # Find the doctor by name (doctor_name is stored in prescription)
-    try:
-        cursor.execute("SELECT id FROM users WHERE name = ? AND role = 'doctor'", (doctor_name,))
+    # Use doctor_id from prescription (primary) with fallback to name matching for legacy data
+    doctor_id_to_notify = None
+    doctor_name_for_msg = doctor_name  # fallback
+
+    if prescription.get("doctor_id"):
+        # New prescription: use FK relationship
+        doctor_id_to_notify = prescription["doctor_id"]
+        cursor.execute("SELECT name FROM users WHERE id = ?", (doctor_id_to_notify,))
         doctor = cursor.fetchone()
         if doctor:
-            doctor_msg = (
-                f"Medicine for prescription {verification_id} has been received by "
-                f"pharmacist {pharmacist_name}."
-            )
-            if _create_notification_if_not_exists(db, cursor, doctor["id"], prescription_id, doctor_msg, now):
-                notification_created_count += 1
-    except Exception as e:
-        # Log the error but continue - don't let one doctor notification failure
-        # prevent admin notifications
-        current_app.logger.error(f"Failed to create notification for doctor: {e}")
+            doctor_name_for_msg = doctor["name"]
+    else:
+        # Legacy prescription: fallback to name matching
+        try:
+            cursor.execute("SELECT id FROM users WHERE name = ? AND role = 'doctor'", (doctor_name,))
+            doctor = cursor.fetchone()
+            if doctor:
+                doctor_id_to_notify = doctor["id"]
+        except Exception as e:
+            # Log the error but continue - don't let one doctor notification failure
+            # prevent admin notifications
+            current_app.logger.error(f"Failed to create notification for doctor: {e}")
+
+    if doctor_id_to_notify:
+        doctor_msg = (
+            f"Medicine for prescription {verification_id} has been received by "
+            f"pharmacist {pharmacist_name}."
+        )
+        if _create_notification_if_not_exists(db, cursor, doctor_id_to_notify, prescription_id, doctor_msg, now):
+            notification_created_count += 1
 
     # Create notifications for all active admins
     try:

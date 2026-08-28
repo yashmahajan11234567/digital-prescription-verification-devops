@@ -6,6 +6,9 @@ from datetime import datetime, timezone
 from typing import Any, Optional
 
 
+from src.models.user import _is_postgres_db
+
+
 @dataclass
 class Notification:
     """Notification model."""
@@ -54,16 +57,37 @@ def create_notification(
     """Create a new notification."""
     now = get_current_timestamp()
     cursor = db.cursor()
-    cursor.execute(
-        """
-        INSERT INTO notifications (user_id, message, is_read, created_at, prescription_id)
-        VALUES (?, ?, 0, ?, ?)
-        """,
-        (user_id, message, now, prescription_id),
-    )
-    db.commit()
+    if _is_postgres_db(db):
+        # psycopg2 does NOT populate cursor.lastrowid (it stays 0), so read the
+        # new primary key back via INSERT ... RETURNING id. The PSQL cursor
+        # wrapper converts ? placeholders to %s, so RETURNING id is preserved.
+        cursor.execute(
+            """
+            INSERT INTO notifications (user_id, message, is_read, created_at, prescription_id)
+            VALUES (?, ?, 0, ?, ?) RETURNING id
+            """,
+            (user_id, message, now, prescription_id),
+        )
+        row = cursor.fetchone()
+        db.commit()
+        if not row:
+            notification_id = 0
+        else:
+            # RealDictCursor (app path) yields dict-like rows; a plain psycopg2
+            # cursor yields tuples. Support both.
+            notification_id = row["id"] if isinstance(row, dict) else row[0]
+            notification_id = int(notification_id)
+    else:
+        cursor.execute(
+            """
+            INSERT INTO notifications (user_id, message, is_read, created_at, prescription_id)
+            VALUES (?, ?, 0, ?, ?)
+            """,
+            (user_id, message, now, prescription_id),
+        )
+        db.commit()
+        notification_id = cursor.lastrowid
 
-    notification_id = cursor.lastrowid
     return Notification(
         id=notification_id,
         user_id=user_id,

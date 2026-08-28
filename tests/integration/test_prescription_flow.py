@@ -18,13 +18,19 @@ def test_issue_and_verify_prescription(client):
     assert b"Amoxicillin" in result.data
 
 
-def test_doctor_name_can_be_changed(client):
-    """Test doctor can issue prescription with different name."""
+def test_doctor_name_cannot_be_changed(client):
+    """Security: an authenticated doctor cannot forge doctor_name via the form.
+
+    The issuing doctor is derived from the authenticated session, not the
+    submitted form field, so a tampered doctor_name must be ignored.
+    """
     login(client, "doctor")
     form = prescription_form()
     form["doctor_name"] = "Dr. Ananya Rao"
     result = client.get(client.post("/prescriptions/new", data=form).headers["Location"])
-    assert b"Dr. Ananya Rao" in result.data
+    # The served page must reflect the authenticated doctor, not the tampered value.
+    assert b"Dr. Meera Patel" in result.data
+    assert b"Dr. Ananya Rao" not in result.data
 
 
 def test_unknown_id_is_not_verified(client):

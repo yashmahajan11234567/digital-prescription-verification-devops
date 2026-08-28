@@ -29,8 +29,6 @@ def prescription_form():
     return {
         "patient_name": "Aarav Shah",
         "patient_reference": "UHID-1024",
-        "doctor_name": "Dr. Meera Patel",
-        "clinic_name": "City Care Clinic",
         "medicine_name": "Amoxicillin",
         "dosage": "500 mg twice daily",
         "instructions": "Take after meals for five days.",
@@ -60,12 +58,15 @@ def test_issue_and_verify_prescription(client):
     assert b"Amoxicillin" in result.data
 
 
-def test_doctor_name_can_be_changed(client):
+def test_doctor_name_cannot_be_changed(client):
     login(client, "doctor")
     form = prescription_form()
+    # Try to change doctor name - should be ignored
     form["doctor_name"] = "Dr. Ananya Rao"
     result = client.get(client.post("/prescriptions/new", data=form).headers["Location"])
-    assert b"Dr. Ananya Rao" in result.data
+    # Should show the original doctor name from session, not the form input
+    assert b"Dr. Meera Patel" in result.data
+    assert b"Dr. Ananya Rao" not in result.data
 
 
 def test_unknown_id_is_not_verified(client):

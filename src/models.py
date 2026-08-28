@@ -15,6 +15,8 @@ class Prescription:
     patient_reference: str
     doctor_name: str
     clinic_name: str
+    doctor_id: Optional[int] = None
+    hospital_id: Optional[int] = None
     medicine_name: str
     dosage: str
     instructions: str
@@ -32,6 +34,8 @@ class Prescription:
             patient_reference=row["patient_reference"],
             doctor_name=row["doctor_name"],
             clinic_name=row["clinic_name"],
+            doctor_id=row["doctor_id"] if "doctor_id" in row.keys() else None,
+            hospital_id=row["hospital_id"] if "hospital_id" in row.keys() else None,
             medicine_name=row["medicine_name"],
             dosage=row["dosage"],
             instructions=row["instructions"],
@@ -53,6 +57,8 @@ class Prescription:
             "patient_reference": self.patient_reference,
             "doctor_name": self.doctor_name,
             "clinic_name": self.clinic_name,
+            "doctor_id": self.doctor_id,
+            "hospital_id": self.hospital_id,
             "medicine_name": self.medicine_name,
             "dosage": self.dosage,
             "instructions": self.instructions,

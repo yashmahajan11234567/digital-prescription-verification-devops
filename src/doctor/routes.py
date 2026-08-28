@@ -11,6 +11,9 @@ from src.doctor import bp
 from src.models import get_unread_count
 
 
+print("DEBUG: Doctor routes module loaded")  # DEBUG
+
+
 @bp.route("/prescriptions/new", methods=["GET", "POST"], endpoint="issue_prescription")
 @require_role("doctor")
 def issue_prescription():
@@ -18,8 +21,6 @@ def issue_prescription():
         fields = {
             "patient_name": request.form.get("patient_name", "").strip(),
             "patient_reference": request.form.get("patient_reference", "").strip(),
-            "doctor_name": request.form.get("doctor_name", "").strip(),
-            "clinic_name": request.form.get("clinic_name", "").strip(),
             "medicine_name": request.form.get("medicine_name", "").strip(),
             "dosage": request.form.get("dosage", "").strip(),
             "instructions": request.form.get("instructions", "").strip(),
@@ -36,20 +37,40 @@ def issue_prescription():
             flash("Issue date must be a valid date.", "error")
             return render_template("issue.html", form=fields), 400
 
-        verification_id = f"RX-{uuid.uuid4().hex[:10].upper()}"
+        # Get authenticated doctor information from session
         db = current_app.get_db()
         cursor = db.cursor()
+        cursor.execute("SELECT id, name, hospital_id FROM users WHERE id = ?", (session["user_id"],))
+        doctor = cursor.fetchone()
+
+        if not doctor:
+            flash("Doctor not found.", "error")
+            return redirect(url_for("auth.logout"))
+
+        doctor_id = doctor["id"]
+        doctor_name = doctor["name"]
+        hospital_id = doctor["hospital_id"]
+
+        # Get hospital name for clinic_name field (for backward compatibility)
+        clinic_name = ""
+        if hospital_id:
+            cursor.execute("SELECT name FROM hospitals WHERE id = ?", (hospital_id,))
+            hospital = cursor.fetchone()
+            if hospital:
+                clinic_name = hospital["name"]
+
+        verification_id = f"RX-{uuid.uuid4().hex[:10].upper()}"
         cursor.execute(
             """
             INSERT INTO prescriptions
             (verification_id, patient_name, patient_reference, doctor_name, clinic_name,
-             medicine_name, dosage, instructions, issue_date, created_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+             doctor_id, hospital_id, medicine_name, dosage, instructions, issue_date, created_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             """,
             (
                 verification_id,
-                fields["patient_name"], fields["patient_reference"], fields["doctor_name"],
-                fields["clinic_name"], fields["medicine_name"], fields["dosage"],
+                fields["patient_name"], fields["patient_reference"], doctor_name, clinic_name,
+                doctor_id, hospital_id, fields["medicine_name"], fields["dosage"],
                 fields["instructions"], fields["issue_date"],
                 datetime.now(timezone.utc).isoformat(),
             ),
@@ -57,7 +78,17 @@ def issue_prescription():
         db.commit()
         return redirect(url_for("pharmacist.verification_result", verification_id=verification_id))
 
-    return render_template("issue.html", form={"issue_date": date.today().isoformat()})
+    # For GET request, pre-populate form with current doctor info
+    db = current_app.get_db()
+    cursor = db.cursor()
+    cursor.execute("SELECT name FROM users WHERE id = ?", (session["user_id"],))
+    doctor = cursor.fetchone()
+    doctor_name = doctor["name"] if doctor else ""
+
+    return render_template("issue.html", form={
+        "issue_date": date.today().isoformat(),
+        "doctor_name": doctor_name
+    })
 
 
 @bp.get("/prescriptions", endpoint="prescriptions")

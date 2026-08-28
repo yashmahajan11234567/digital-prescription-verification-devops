@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block title %}Add Hospital | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>Add Hospital</h1>
+  <a class="button secondary" href="{{ url_for('admin.hospitals') }}">← Back to Hospitals</a>
+</div>
+
+<section class="card">
+  <form method="post" action="{{ url_for('admin.add_hospital_post') }}" class="form">
+    <label>
+      Hospital name
+      <input type="text" name="name" value="{{ (form.name if form else '') }}" required>
+    </label>
+    <label>
+      Address
+      <input type="text" name="address" value="{{ (form.address if form else '') }}">
+    </label>
+    <label>
+      Phone
+      <input type="text" name="phone" value="{{ (form.phone if form else '') }}">
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" value="{{ (form.email if form else '') }}">
+    </label>
+    <div class="form-actions">
+      <button type="submit" class="button">Create Hospital</button>
+    </div>
+  </form>
+</section>
+{% endblock %}

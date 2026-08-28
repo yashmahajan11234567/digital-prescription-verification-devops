@@ -9,7 +9,13 @@ from __future__ import annotations
 import os
 from datetime import datetime, timezone
 
-from src.models.user import VALID_ROLES, create_user, get_user_by_email, delete_user
+from src.models.user import (
+    VALID_ROLES,
+    create_user,
+    get_user_by_email,
+    delete_user,
+    generate_pharmacist_identifier,
+)
 from src import create_app
 
 
@@ -139,10 +145,15 @@ def _upsert_hospital(db, cursor, hospital_data: dict, is_postgres: bool, force: 
             db.commit()
             cursor.execute("SELECT id FROM hospitals WHERE name = ?", (name,))
             existing = cursor.fetchone()
-            # Check if this was a new insert by checking if we got existing data
-            # If existing is not None, the record already existed and INSERT was ignored
-            was_created = existing is None
-            return existing["id"] if existing else None, not was_created
+            if existing is None:
+                # INSERT OR IGNORE left nothing behind: the UNIQUE name was already
+                # present, so the row existed before this call (not created now).
+                cursor.execute("SELECT id FROM hospitals WHERE name = ?", (name,))
+                existing = cursor.fetchone()
+            # A row exists now. It was created only if the INSERT actually inserted
+            # a row (rowcount > 0 for INSERT OR IGNORE).
+            was_created = cursor.rowcount > 0
+            return existing["id"] if existing else None, was_created
 
 
 def _upsert_user(db, cursor, user_data: dict, hospital_id: int | None, is_postgres: bool, force: bool = False) -> bool:
@@ -158,6 +169,11 @@ def _upsert_user(db, cursor, user_data: dict, hospital_id: int | None, is_postgr
     now = datetime.now(timezone.utc).isoformat()
     password_hash = create_user.__globals__['User'].hash_password(password)
 
+    # Generate pharmacist identifier for pharmacist roles (reuse shared helper)
+    pharmacist_identifier = None
+    if role == "pharmacist":
+        pharmacist_identifier = generate_pharmacist_identifier(db)
+
     existing = get_user_by_email(db, email)
     if existing and not force:
         return False  # Skipped
@@ -169,36 +185,39 @@ def _upsert_user(db, cursor, user_data: dict, hospital_id: int | None, is_postgr
         if is_postgres:
             cursor.execute(
                 """
-                INSERT INTO users (email, name, password_hash, role, is_active, hospital_id, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO users (email, name, password_hash, role, is_active, hospital_id, pharmacist_identifier, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (email) DO UPDATE SET
                     name = EXCLUDED.name,
                     password_hash = EXCLUDED.password_hash,
                     role = EXCLUDED.role,
                     is_active = EXCLUDED.is_active,
                     hospital_id = EXCLUDED.hospital_id,
+                    pharmacist_identifier = EXCLUDED.pharmacist_identifier,
                     updated_at = EXCLUDED.updated_at
                 """,
-                (email, name, password_hash, role, is_active, hospital_id, now, now),
+                (email, name, password_hash, role, is_active, hospital_id, pharmacist_identifier, now, now),
             )
         else:
             cursor.execute(
                 """
-                INSERT INTO users (email, name, password_hash, role, is_active, hospital_id, created_at, updated_at)
-                VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+                INSERT INTO users (email, name, password_hash, role, is_active, hospital_id, pharmacist_identifier, created_at, updated_at)
+                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
                 ON CONFLICT (email) DO UPDATE SET
                     name = EXCLUDED.name,
                     password_hash = EXCLUDED.password_hash,
                     role = EXCLUDED.role,
                     is_active = EXCLUDED.is_active,
                     hospital_id = EXCLUDED.hospital_id,
+                    pharmacist_identifier = EXCLUDED.pharmacist_identifier,
                     updated_at = EXCLUDED.updated_at
                 """,
-                (email, name, password_hash, role, is_active, hospital_id, now, now),
+                (email, name, password_hash, role, is_active, hospital_id, pharmacist_identifier, now, now),
             )
     else:
+        # User without hospital (doctors without hospital_id should not happen in practice, but handle gracefully)
         # Admin without hospital - use create_user for simplicity (handles password hashing)
-        create_user(db, email, name, password, role, is_active=bool(is_active))
+        create_user(db, email, name, password, role, is_active=bool(is_active), pharmacist_identifier=pharmacist_identifier)
 
     return True
 

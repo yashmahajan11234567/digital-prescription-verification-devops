@@ -20,28 +20,15 @@
     <span class="stat-value">{{ stats.pharmacists }}</span>
     <span class="stat-label">Pharmacists</span>
   </article>
-  <article class="stat-card">
-    <span class="stat-value">{{ stats.prescriptions }}</span>
-    <span class="stat-label">Total Prescriptions</span>
-  </article>
-  <article class="stat-card active">
-    <span class="stat-value">{{ stats.active }}</span>
-    <span class="stat-label">Active</span>
-  </article>
-  <article class="stat-card revoked">
-    <span class="stat-value">{{ stats.revoked }}</span>
-    <span class="stat-label">Revoked</span>
-  </article>
-  <article class="stat-card received">
-    <span class="stat-value">{{ stats.received }}</span>
-    <span class="stat-label">Received</span>
-  </article>
 </div>
 
 <section class="card">
   <h2>Quick Navigation</h2>
   <div class="nav-links">
     <a class="button" href="{{ url_for('admin.hospitals') }}">View All Hospitals</a>
+    <a class="button" href="{{ url_for('admin.add_hospital') }}">Add Hospital</a>
+    <a class="button" href="{{ url_for('admin.pharmacists') }}">View Pharmacists</a>
+    <a class="button" href="{{ url_for('admin.add_pharmacist') }}">Add Pharmacist</a>
   </div>
 </section>
 {% endblock %}

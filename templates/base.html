@@ -23,6 +23,7 @@
         {% elif current_user.role == 'admin' %}
           <a href="{{ url_for('admin.dashboard') }}">Dashboard</a>
           <a href="{{ url_for('admin.hospitals') }}">Hospitals</a>
+          <a href="{{ url_for('admin.pharmacists') }}">Pharmacists</a>
           {% if unread_count and unread_count > 0 %}
             <a href="{{ url_for('admin.notifications') }}" class="notification-link">Notifications ({{ unread_count }})</a>
           {% else %}
