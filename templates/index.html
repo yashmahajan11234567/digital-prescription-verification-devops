@@ -2,13 +2,38 @@
 {% block title %}RxVerify | Prescription Verification{% endblock %}
 {% block content %}
 <section class="hero">
-  <p class="eyebrow">DIGITAL PRESCRIPTION VERIFICATION</p>
-  <h1>Secure handoff from doctor to pharmacist.</h1>
-  <p class="lead">A local prototype with separate role-based portals for issuing and verifying digital prescriptions.</p>
+  <h1>Secure prescription handoff.<br>Doctor to pharmacist. Verified.</h1>
+  <p class="lead">A local prototype with role-based portals for issuing and verifying digital prescriptions. Each prescription carries a unique, tamper-evident ID.</p>
+  <div class="actions">
+    <a class="button" href="{{ url_for('auth.login', role='doctor') }}">Doctor portal</a>
+    <a class="button secondary" href="{{ url_for('auth.login', role='pharmacist') }}">Pharmacist portal</a>
+    <a class="button ghost" href="{{ url_for('auth.login', role='admin') }}">Admin portal</a>
+  </div>
 </section>
+
+<div class="section-header">
+  <h2>How it works</h2>
+  <p class="subtitle">Three roles. One workflow. Zero ambiguity.</p>
+</div>
+
 <section class="steps">
-  <article><strong>01 · DOCTOR</strong><h2>Issue prescription</h2><p>Create a prescription and share its unique verification ID.</p><a class="button" href="{{ url_for('auth.login', role='doctor') }}">Doctor sign in</a></article>
-  <article><strong>02 · PHARMACIST</strong><h2>Verify prescription</h2><p>Check the prescription before dispensing medicine.</p><a class="button secondary" href="{{ url_for('auth.login', role='pharmacist') }}">Pharmacist sign in</a></article>
-  <article><strong>03 · ADMIN PORTAL</strong><h2>Manage hospitals & staff</h2><p>Administrators can manage hospitals, doctors, and pharmacists.</p><a class="button" href="{{ url_for('auth.login', role='admin') }}">Admin sign in</a></article>
+  <article class="step-card">
+    <div class="step-number">01</div>
+    <h3>Doctor issues</h3>
+    <p>Authenticate and create a prescription. A unique verification ID is generated automatically.</p>
+    <a class="button small" href="{{ url_for('auth.login', role='doctor') }}">Try as doctor</a>
+  </article>
+  <article class="step-card">
+    <div class="step-number">02</div>
+    <h3>Pharmacist verifies</h3>
+    <p>Enter the verification ID. See the full prescription details before dispensing.</p>
+    <a class="button secondary small" href="{{ url_for('auth.login', role='pharmacist') }}">Try as pharmacist</a>
+  </article>
+  <article class="step-card">
+    <div class="step-number">03</div>
+    <h3>Admin oversees</h3>
+    <p>Manage hospitals, staff, and audit trails. Tenant isolation keeps data separated.</p>
+    <a class="button ghost small" href="{{ url_for('auth.login', role='admin') }}">Try as admin</a>
+  </article>
 </section>
 {% endblock %}

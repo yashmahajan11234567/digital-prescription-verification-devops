@@ -2,11 +2,11 @@
 {% block title %}Pharmacists | RxVerify{% endblock %}
 {% block content %}
 <div class="page-heading">
-  <p class="eyebrow">ADMIN PORTAL</p>
   <h1>Pharmacists</h1>
-  <p>All registered pharmacists with their verification IDs.</p>
+  <p class="subtitle">All registered pharmacists with their verification IDs.</p>
 </div>
 
+<div class="table-wrapper">
 <table class="table">
   <thead>
     <tr>
@@ -22,15 +22,16 @@
     <tr>
       <td>{{ pharmacist.name }}</td>
       <td>{{ pharmacist.email }}</td>
-      <td>{{ pharmacist.pharmacist_identifier or '—' }}</td>
-      <td>{% if pharmacist.is_active %}Yes{% else %}No{% endif %}</td>
+      <td><code>{{ pharmacist.pharmacist_identifier or '—' }}</code></td>
+      <td><span class="pill {% if pharmacist.is_active %}active{% else %}revoked{% endif %}">{% if pharmacist.is_active %}Active{% else %}Inactive{% endif %}</span></td>
       <td>{{ pharmacist.verification_count }}</td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 
-<div class="card">
+<div style="margin-top: 24px;">
   <a class="button" href="{{ url_for('admin.add_pharmacist') }}">Add Pharmacist</a>
 </div>
 {% endblock %}

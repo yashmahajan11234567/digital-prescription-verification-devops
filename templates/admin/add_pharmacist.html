@@ -2,15 +2,26 @@
 {% block title %}Add Pharmacist | RxVerify{% endblock %}
 {% block content %}
 <div class="page-heading">
-  <p class="eyebrow">ADMIN PORTAL</p>
   <h1>Add Pharmacist</h1>
-  <p>Register a new pharmacist with auto-generated PHARM-XXX identifier.</p>
+  <p class="subtitle">Register a new pharmacist with auto-generated PHARM-XXX identifier.</p>
 </div>
 
 <form class="card form-grid" method="post">
-  <label>Pharmacist name<input name="name" value="{{ form.name or '' }}" required></label>
-  <label>Email<input type="email" name="email" value="{{ form.email or '' }}" required></label>
-  <label>Password<input type="password" name="password" required autocomplete="new-password"></label>
-  <div class="full"><button class="button" type="submit">Register pharmacist</button></div>
+  <div class="field full">
+    <label for="name">Pharmacist name <span class="required"></span></label>
+    <input type="text" id="name" name="name" value="{{ form.name or '' }}" required autocomplete="name">
+  </div>
+  <div class="field">
+    <label for="email">Email <span class="required"></span></label>
+    <input type="email" id="email" name="email" value="{{ form.email or '' }}" required autocomplete="email">
+  </div>
+  <div class="field">
+    <label for="password">Password <span class="required"></span></label>
+    <input type="password" id="password" name="password" required autocomplete="new-password">
+  </div>
+  <div class="field full">
+    <button class="button" type="submit">Register pharmacist</button>
+    <a class="button ghost" href="{{ url_for('admin.pharmacists') }}">Cancel</a>
+  </div>
 </form>
 {% endblock %}

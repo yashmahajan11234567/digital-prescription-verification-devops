@@ -1,15 +1,33 @@
 {% extends "base.html" %}
 {% block title %}{{ hospital.name }} | RxVerify{% endblock %}
 {% block content %}
-<div class="page-heading">
-  <p class="eyebrow">ADMIN PORTAL</p>
-  <h1>{{ hospital.name }}</h1>
-  <p>{{ hospital.address or '' }}{% if hospital.phone %} · {{ hospital.phone }}{% endif %}{% if hospital.email %} · {{ hospital.email }}{% endif %}</p>
+<div class="page-heading hospital-header">
+  <div>
+    <h1>{{ hospital.name }}</h1>
+    <p class="subtitle">{{ hospital.address or '' }}{% if hospital.phone %} · {{ hospital.phone }}{% endif %}{% if hospital.email %} · {{ hospital.email }}{% endif %}</p>
+  </div>
+  <a class="button secondary" href="{{ url_for('admin.add_doctor', hospital_id=hospital.id) }}">Add Doctor</a>
+</div>
+
+<div class="hospital-meta">
+  <div class="field">
+    <span class="label">Doctors</span>
+    <span class="value">{{ doctors|length }}</span>
+  </div>
+  <div class="field">
+    <span class="label">Pharmacists</span>
+    <span class="value">{{ pharmacists|length }}</span>
+  </div>
+  <div class="field">
+    <span class="label">Total prescriptions</span>
+    <span class="value">{{ doctors|sum(attribute='prescription_count') }}</span>
+  </div>
 </div>
 
 <section class="card">
   <h2>Doctors ({{ doctors|length }})</h2>
   {% if doctors %}
+  <div class="table-wrapper">
   <table class="table">
     <thead>
       <tr>
@@ -24,21 +42,22 @@
         <td><a href="{{ url_for('admin.doctor_detail', hospital_id=hospital.id, doctor_id=doctor.id) }}">{{ doctor.name }}</a></td>
         <td>{{ doctor.prescription_count }}</td>
         <td>
-          <a class="button secondary" href="{{ url_for('admin.doctor_detail', hospital_id=hospital.id, doctor_id=doctor.id) }}">View</a>
+          <a class="button secondary small" href="{{ url_for('admin.doctor_detail', hospital_id=hospital.id, doctor_id=doctor.id) }}">View</a>
         </td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-  <p>No doctors registered for this hospital.</p>
+  <p style="color: var(--muted);">No doctors registered for this hospital.</p>
   {% endif %}
-  <a class="button" href="{{ url_for('admin.add_doctor', hospital_id=hospital.id) }}">Add Doctor</a>
 </section>
 
-<section class="card">
+<section class="card" style="margin-top: 24px;">
   <h2>Pharmacists ({{ pharmacists|length }})</h2>
   {% if pharmacists %}
+  <div class="table-wrapper">
   <table class="table">
     <thead>
       <tr>
@@ -51,14 +70,15 @@
       {% for pharmacist in pharmacists %}
       <tr>
         <td>{{ pharmacist.name }}</td>
-        <td>{{ pharmacist.pharmacist_identifier or '—' }}</td>
+        <td><code>{{ pharmacist.pharmacist_identifier or '—' }}</code></td>
         <td>{{ pharmacist.verification_count }}</td>
       </tr>
       {% endfor %}
     </tbody>
   </table>
+  </div>
   {% else %}
-  <p>No pharmacists registered for this hospital.</p>
+  <p style="color: var(--muted);">No pharmacists registered for this hospital.</p>
   {% endif %}
 </section>
 {% endblock %}

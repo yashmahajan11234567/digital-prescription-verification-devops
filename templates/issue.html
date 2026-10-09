@@ -1,16 +1,47 @@
 {% extends "base.html" %}
 {% block title %}Issue prescription | RxVerify{% endblock %}
 {% block content %}
-<div class="page-heading"><p class="eyebrow">CLINIC PORTAL</p><h1>Issue a prescription</h1><p>Every field is stored locally and linked to one verification ID.</p></div>
+<div class="page-heading">
+  <h1>Issue a prescription</h1>
+  <p class="subtitle">Every field is stored locally and linked to one verification ID.</p>
+</div>
+
 <form class="card form-grid" method="post">
-  <label>Patient name<input name="patient_name" value="{{ form.get('patient_name', '') }}" required></label>
-  <label>Patient reference<input name="patient_reference" placeholder="e.g. UHID-1024" value="{{ form.get('patient_reference', '') }}" required></label>
-  <label>Issuing doctor<input name="doctor_name" value="{{ form.get('doctor_name', current_user.name) }}" required></label>
-  <label>Clinic name<input name="clinic_name" value="{{ form.get('clinic_name', '') }}" required></label>
-  <label>Medicine name<input name="medicine_name" value="{{ form.get('medicine_name', '') }}" required></label>
-  <label>Dosage<input name="dosage" placeholder="e.g. 500 mg, twice daily" value="{{ form.get('dosage', '') }}" required></label>
-  <label class="full">Instructions<textarea name="instructions" required>{{ form.get('instructions', '') }}</textarea></label>
-  <label>Issue date<input type="date" name="issue_date" value="{{ form.get('issue_date', '') }}" required></label>
-  <div class="full"><button class="button" type="submit">Create verification ID</button></div>
+  <div class="field full">
+    <label for="patient_name">Patient name</label>
+    <input type="text" id="patient_name" name="patient_name" value="{{ form.get('patient_name', '') }}" required autocomplete="name">
+  </div>
+  <div class="field">
+    <label for="patient_reference">Patient reference <span class="required"></span></label>
+    <input type="text" id="patient_reference" name="patient_reference" placeholder="e.g. UHID-1024" value="{{ form.get('patient_reference', '') }}" required>
+  </div>
+  <div class="field">
+    <label for="doctor_name">Issuing doctor <span class="required"></span></label>
+    <input type="text" id="doctor_name" name="doctor_name" value="{{ form.get('doctor_name', current_user.name) }}" required readonly>
+  </div>
+  <div class="field">
+    <label for="clinic_name">Clinic name <span class="required"></span></label>
+    <input type="text" id="clinic_name" name="clinic_name" value="{{ form.get('clinic_name', '') }}" required>
+  </div>
+  <div class="field full">
+    <label for="medicine_name">Medicine name <span class="required"></span></label>
+    <input type="text" id="medicine_name" name="medicine_name" value="{{ form.get('medicine_name', '') }}" required autocomplete="off">
+  </div>
+  <div class="field">
+    <label for="dosage">Dosage <span class="required"></span></label>
+    <input type="text" id="dosage" name="dosage" placeholder="e.g. 500 mg, twice daily" value="{{ form.get('dosage', '') }}" required>
+  </div>
+  <div class="field full">
+    <label for="instructions">Instructions <span class="required"></span></label>
+    <textarea id="instructions" name="instructions" required>{{ form.get('instructions', '') }}</textarea>
+  </div>
+  <div class="field">
+    <label for="issue_date">Issue date <span class="required"></span></label>
+    <input type="date" id="issue_date" name="issue_date" value="{{ form.get('issue_date', '') }}" required>
+  </div>
+  <div class="field full">
+    <button class="button" type="submit">Create verification ID</button>
+    <a class="button ghost" href="{{ url_for('doctor.prescriptions') }}">Cancel</a>
+  </div>
 </form>
 {% endblock %}

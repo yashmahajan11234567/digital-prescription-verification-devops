@@ -1,17 +1,42 @@
 {% extends "base.html" %}
 {% block title %}Prescription records | RxVerify{% endblock %}
 {% block content %}
-<div class="page-heading"><p class="eyebrow">CLINIC PORTAL</p><h1>Prescription records</h1><p>Use this local prototype view to demonstrate issuance and revocation.</p></div>
+<div class="page-heading">
+  <h1>Prescription records</h1>
+  <p class="subtitle">All prescriptions issued from this clinic. Active prescriptions can be verified by pharmacists.</p>
+</div>
+
 {% if prescriptions %}
   <div class="record-list">
   {% for prescription in prescriptions %}
-    <article class="card record">
-      <div><span class="pill {{ prescription['status'] }}">{{ prescription['status'] }}</span><h2>{{ prescription['medicine_name'] }}</h2><p>{{ prescription['patient_name'] }} · {{ prescription['doctor_name'] }}</p><code>{{ prescription['verification_id'] }}</code></div>
-      <div class="record-actions"><a href="{{ url_for('pharmacist.verification_result', verification_id=prescription['verification_id']) }}">View verification</a>{% if prescription['status'] == 'active' %}<form method="post" action="{{ url_for('doctor.revoke_prescription', prescription_id=prescription['id']) }}"><button class="link-button" type="submit">Revoke</button></form>{% endif %}</div>
+    <article class="record">
+      <div>
+        <div style="display: flex; align-items: center; gap: 12px; flex-wrap: wrap;">
+          <span class="pill {{ prescription['status'] }}">{{ prescription['status'] }}</span>
+          <h3 style="margin: 0;">{{ prescription['medicine_name'] }}</h3>
+        </div>
+        <div class="meta">
+          <code>{{ prescription['verification_id'] }}</code>
+          <span>{{ prescription['patient_name'] }}</span>
+          <span>{{ prescription['doctor_name'] }}</span>
+        </div>
+      </div>
+      <div class="record-actions">
+        <a href="{{ url_for('pharmacist.verification_result', verification_id=prescription['verification_id']) }}">View</a>
+        {% if prescription['status'] == 'active' %}
+          <form method="post" action="{{ url_for('doctor.revoke_prescription', prescription_id=prescription['id']) }}">
+            <button class="link-button" type="submit">Revoke</button>
+          </form>
+        {% endif %}
+      </div>
     </article>
   {% endfor %}
   </div>
 {% else %}
-  <section class="card empty"><h2>No prescriptions yet.</h2><a class="button" href="{{ url_for('doctor.issue_prescription') }}">Issue the first one</a></section>
+  <section class="empty">
+    <h2>No prescriptions yet</h2>
+    <p>Get started by issuing your first prescription.</p>
+    <a class="button" href="{{ url_for('doctor.issue_prescription') }}">Issue the first one</a>
+  </section>
 {% endif %}
 {% endblock %}

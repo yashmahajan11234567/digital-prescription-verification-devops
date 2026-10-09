@@ -2,18 +2,56 @@
 {% block title %}Verification result | RxVerify{% endblock %}
 {% block content %}
 {% if prescription %}
-  <div class="status {{ prescription['status'] }}">{% if prescription['status'] == 'active' %}✓ {% if current_user.role == 'doctor' %}Prescription created{% else %}Valid prescription{% endif %}{% else %}✕ Prescription revoked{% endif %}</div>
-  <div class="page-heading"><p class="eyebrow">{{ prescription['verification_id'] }}</p><h1>{% if prescription['status'] == 'active' %}{% if current_user.role == 'doctor' %}Prescription issued successfully{% else %}Prescription verified{% endif %}{% else %}Do not dispense{% endif %}</h1>{% if current_user.role == 'doctor' and prescription['status'] == 'active' %}<p>Share this verification ID with the pharmacist: <strong>{{ prescription['verification_id'] }}</strong></p>{% endif %}</div>
-  <section class="card details">
-    <div><span>Patient</span><strong>{{ prescription['patient_name'] }}</strong><small>{{ prescription['patient_reference'] }}</small></div>
-    <div><span>Prescribed by</span><strong>{{ prescription['doctor_name'] }}</strong><small>{{ prescription['clinic_name'] }}</small></div>
-    <div><span>Medicine</span><strong>{{ prescription['medicine_name'] }}</strong><small>{{ prescription['dosage'] }}</small></div>
-    <div><span>Issue date</span><strong>{{ prescription['issue_date'] }}</strong><small>Current status: {{ prescription['status'] }}</small></div>
-    <div class="full"><span>Instructions</span><strong>{{ prescription['instructions'] }}</strong></div>
-  </section>
+  <div class="result-card {% if prescription['status'] == 'active' %}verified{% else %}revoked{% endif %}">
+    <div class="result-status">
+      <span class="status {{ prescription['status'] }}">{% if prescription['status'] == 'active' %}Verified{% else %}Revoked{% endif %}</span>
+    </div>
+    
+    <div class="verification-id">{{ prescription['verification_id'] }}</div>
+    
+    <h2>{% if prescription['status'] == 'active' %}Valid prescription — safe to dispense{% else %}Do not dispense — prescription revoked{% endif %}</h2>
+    
+    <div class="details">
+      <div>
+        <span class="label">Patient</span>
+        <span class="value">{{ prescription['patient_name'] }}</span>
+        <span class="label">Reference</span>
+        <span class="value">{{ prescription['patient_reference'] }}</span>
+      </div>
+      <div>
+        <span class="label">Prescribed by</span>
+        <span class="value">{{ prescription['doctor_name'] }}</span>
+        <span class="label">Clinic</span>
+        <span class="value">{{ prescription['clinic_name'] }}</span>
+      </div>
+      <div>
+        <span class="label">Medicine</span>
+        <span class="value">{{ prescription['medicine_name'] }}</span>
+        <span class="label">Dosage</span>
+        <span class="value">{{ prescription['dosage'] }}</span>
+      </div>
+      <div>
+        <span class="label">Issue date</span>
+        <span class="value">{{ prescription['issue_date'] }}</span>
+        <span class="label">Status</span>
+        <span class="value">{{ prescription['status']|title }}</span>
+      </div>
+      <div class="full">
+        <span class="label">Instructions</span>
+        <span class="value">{{ prescription['instructions'] }}</span>
+      </div>
+    </div>
+    
+    {% if current_user.role == 'doctor' and prescription['status'] == 'active' %}
+      <p style="margin-top: 24px; font-size: 0.9rem; color: var(--muted);">Share this verification ID with the pharmacist.</p>
+    {% endif %}
+  </div>
 {% else %}
-  <div class="status revoked">✕ No matching prescription</div>
-  <div class="page-heading"><p class="eyebrow">{{ verification_id|upper }}</p><h1>We could not verify this ID.</h1><p>Check the ID and try again. It may not have been issued by this system.</p></div>
-  <a class="button" href="{{ url_for('pharmacist.verify_form') }}">Try another ID</a>
+  <div class="card empty">
+    <div class="status revoked" style="margin-bottom: 16px;">No match</div>
+    <h2>We could not verify this ID</h2>
+    <p>Check the ID and try again. It may not have been issued by this system.</p>
+    <a class="button" href="{{ url_for('pharmacist.verify_form') }}">Try another ID</a>
+  </div>
 {% endif %}
 {% endblock %}

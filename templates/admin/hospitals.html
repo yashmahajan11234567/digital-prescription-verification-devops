@@ -2,11 +2,11 @@
 {% block title %}Hospitals | RxVerify{% endblock %}
 {% block content %}
 <div class="page-heading">
-  <p class="eyebrow">ADMIN PORTAL</p>
   <h1>Hospitals</h1>
-  <p>All registered hospitals with staff counts.</p>
+  <p class="subtitle">All registered hospitals with staff counts.</p>
 </div>
 
+<div class="table-wrapper">
 <table class="table">
   <thead>
     <tr>
@@ -29,14 +29,15 @@
       <td>{{ hospital.doctor_count }}</td>
       <td>{{ hospital.pharmacist_count }}</td>
       <td>
-        <a class="button secondary" href="{{ url_for('admin.add_doctor', hospital_id=hospital.id) }}">Add Doctor</a>
+        <a class="button secondary small" href="{{ url_for('admin.add_doctor', hospital_id=hospital.id) }}">Add Doctor</a>
       </td>
     </tr>
     {% endfor %}
   </tbody>
 </table>
+</div>
 
-<div class="card">
+<div style="margin-top: 24px;">
   <a class="button" href="{{ url_for('admin.add_hospital') }}">Add Hospital</a>
 </div>
 {% endblock %}

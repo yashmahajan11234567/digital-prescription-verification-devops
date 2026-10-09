@@ -2,12 +2,12 @@
 {% block title %}Notifications | RxVerify{% endblock %}
 {% block content %}
 <div class="page-heading">
-  <p class="eyebrow">DOCTOR PORTAL</p>
   <h1>Notifications</h1>
-  <p>View all your notifications.</p>
+  <p class="subtitle">View all your notifications.</p>
 </div>
 
 {% if notifications %}
+<div class="table-wrapper">
 <table class="table">
   <thead>
     <tr>
@@ -19,14 +19,18 @@
   </thead>
   <tbody>
     {% for n in notifications %}
-    <tr class="{% if not n.is_read %}unread{% endif %}">
+    <tr class="{% if not n.is_read %}unread{% endif %}" style="{% if not n.is_read %}font-weight: 600;{% endif %}">
       <td>{{ n.message }}</td>
-      <td>{% if n.is_read %}Read{% else %}Unread{% endif %}</td>
+      <td>
+        <span class="pill {% if n.is_read %}active{% else %}pending{% endif %}">
+          {% if n.is_read %}Read{% else %}Unread{% endif %}
+        </span>
+      </td>
       <td>{{ n.created_at }}</td>
       <td>
         {% if not n.is_read %}
         <form method="post" action="{{ url_for('doctor.mark_notification_read', notification_id=n.id) }}" style="display:inline;">
-          <button class="button secondary" type="submit">Mark read</button>
+          <button class="button secondary small" type="submit">Mark read</button>
         </form>
         {% endif %}
       </td>
@@ -34,11 +38,15 @@
     {% endfor %}
   </tbody>
 </table>
+</div>
 
-<form method="post" action="{{ url_for('doctor.mark_all_read') }}" style="display:inline;">
+<form method="post" action="{{ url_for('doctor.mark_all_read') }}" style="display:inline; margin-top: 16px;">
   <button class="button secondary" type="submit">Mark all as read</button>
 </form>
 {% else %}
-<p>No notifications.</p>
+<div class="empty">
+  <h2>No notifications</h2>
+  <p>All caught up.</p>
+</div>
 {% endif %}
 {% endblock %}

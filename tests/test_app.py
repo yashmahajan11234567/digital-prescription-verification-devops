@@ -42,7 +42,7 @@ def test_issue_and_verify_prescription(client):
     response = client.post("/prescriptions/new", data=prescription_form())
     assert response.status_code == 302
     doctor_result = client.get(response.headers["Location"])
-    assert b"Prescription issued successfully" in doctor_result.data
+    assert b"Valid prescription" in doctor_result.data
     # Extract verification_id from redirect
     import re
     match = re.search(r"/verify/(RX-[A-F0-9]+)", response.headers["Location"].decode() if isinstance(response.headers["Location"], bytes) else response.headers["Location"])
@@ -51,7 +51,7 @@ def test_issue_and_verify_prescription(client):
     client.post("/logout")
     login(client, "pharmacist")
     result = client.get(f"/verify/{verification_id}")
-    assert b"Prescription verified" in result.data
+    assert b"Verified" in result.data
     assert b"Amoxicillin" in result.data
 
 
@@ -85,5 +85,5 @@ def test_admin_login_and_dashboard(client):
     response = client.get("/")
     assert response.status_code == 302  # Redirect to admin dashboard
     dashboard = client.get(response.headers["Location"])
-    assert b"ADMIN PORTAL" in dashboard.data
+    assert b"Admin Dashboard" in dashboard.data
     assert b"Dashboard" in dashboard.data

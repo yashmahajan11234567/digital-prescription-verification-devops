@@ -2,9 +2,8 @@
 {% block title %}Admin Dashboard | RxVerify{% endblock %}
 {% block content %}
 <div class="page-heading">
-  <p class="eyebrow">ADMIN PORTAL</p>
-  <h1>Dashboard</h1>
-  <p>System-wide overview of hospitals, users, and prescriptions.</p>
+  <h1>Admin Dashboard</h1>
+  <p class="subtitle">System-wide overview of hospitals, staff, and prescriptions.</p>
 </div>
 
 <div class="stats-grid">
@@ -26,9 +25,9 @@
   <h2>Quick Navigation</h2>
   <div class="nav-links">
     <a class="button" href="{{ url_for('admin.hospitals') }}">View All Hospitals</a>
-    <a class="button" href="{{ url_for('admin.add_hospital') }}">Add Hospital</a>
+    <a class="button secondary" href="{{ url_for('admin.add_hospital') }}">Add Hospital</a>
     <a class="button" href="{{ url_for('admin.pharmacists') }}">View Pharmacists</a>
-    <a class="button" href="{{ url_for('admin.add_pharmacist') }}">Add Pharmacist</a>
+    <a class="button secondary" href="{{ url_for('admin.add_pharmacist') }}">Add Pharmacist</a>
   </div>
 </section>
 {% endblock %}
@@ -47,7 +46,8 @@
           if (navNotificationLink) {
             if (data.unread_count > 0) {
               navNotificationLink.classList.add('notification-link');
-              navNotificationLink.textContent = `Notifications (${data.unread_count})`;
+              navNotificationLink.setAttribute('data-count', data.unread_count);
+              navNotificationLink.innerHTML = 'Notifications <span class="badge"></span>';
             } else {
               navNotificationLink.classList.remove('notification-link');
               navNotificationLink.textContent = 'Notifications';
