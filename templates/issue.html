@@ -6,7 +6,7 @@
   <p class="subtitle">Every field is stored locally and linked to one verification ID.</p>
 </div>
 
-<form class="card form-grid" method="post">
+<form class="card form-grid" action="{{ url_for('doctor.issue_prescription') }}" method="post">
   <div class="field full">
     <label for="patient_name">Patient name</label>
     <input type="text" id="patient_name" name="patient_name" value="{{ form.get('patient_name', '') }}" required autocomplete="name">

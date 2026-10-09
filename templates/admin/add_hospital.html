@@ -6,7 +6,7 @@
   <p class="subtitle">Register a new hospital in the system.</p>
 </div>
 
-<form class="card form-grid" method="post">
+<form class="card form-grid" action="{{ url_for('admin.add_hospital_post') }}" method="post">
   <div class="field full">
     <label for="name">Hospital name <span class="required"></span></label>
     <input type="text" id="name" name="name" value="{{ form.name or '' }}" required autocomplete="off">

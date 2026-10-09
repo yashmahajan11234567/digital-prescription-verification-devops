@@ -54,7 +54,7 @@ def dashboard():
 @require_admin()
 def add_hospital_form():
     """Render the Add Hospital form."""
-    return render_template("admin/add_hospital.html")
+    return render_template("admin/add_hospital.html", form={})
 
 
 @bp.post("/hospitals/add", endpoint="add_hospital_post")
@@ -100,7 +100,7 @@ def add_doctor_form(hospital_id: int):
     hospital = get_hospital_by_id(db, hospital_id)
     if not hospital:
         abort(404)
-    return render_template("admin/add_doctor.html", hospital=hospital)
+    return render_template("admin/add_doctor.html", hospital=hospital, form={})
 
 
 @bp.post("/hospitals/<int:hospital_id>/doctors/add", endpoint="add_doctor_post")
@@ -176,7 +176,7 @@ def pharmacists_list():
 @require_admin()
 def add_pharmacist_form():
     """Render the Add Pharmacist form."""
-    return render_template("admin/add_pharmacist.html")
+    return render_template("admin/add_pharmacist.html", form={})
 
 
 @bp.post("/pharmacists/add", endpoint="add_pharmacist_post")

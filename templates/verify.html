@@ -6,7 +6,7 @@
   <p class="subtitle">Enter the verification ID printed or shared by the clinic.</p>
 </div>
 
-<form class="card verify-form" method="post">
+<form class="card verify-form" action="{{ url_for('pharmacist.verify_submit') }}" method="post">
   <div class="field">
     <label for="verification_id">Prescription ID</label>
     <input type="text" id="verification_id" name="verification_id" placeholder="RX-XXXXXXXXXX" autocomplete="off" required style="text-transform: uppercase;">

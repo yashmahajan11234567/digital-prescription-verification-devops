@@ -45,6 +45,16 @@
     {% if current_user.role == 'doctor' and prescription['status'] == 'active' %}
       <p style="margin-top: 24px; font-size: 0.9rem; color: var(--muted);">Share this verification ID with the pharmacist.</p>
     {% endif %}
+    
+    {% if current_user.role == 'pharmacist' and prescription['status'] == 'active' %}
+      <form class="receive-form" action="{{ url_for('pharmacist.receive_medicine', prescription_id=prescription['id']) }}" method="post" style="margin-top: 24px;">
+        <button class="button button-primary" type="submit">Mark as Received</button>
+      </form>
+    {% elif current_user.role == 'pharmacist' and prescription['status'] == 'received' %}
+      <p style="margin-top: 24px; font-size: 0.9rem; color: var(--muted);">
+        <strong>Received:</strong> {{ prescription['received_at'] }} by {{ prescription.get('received_by_name', 'Pharmacist') }}
+      </p>
+    {% endif %}
   </div>
 {% else %}
   <div class="card empty">

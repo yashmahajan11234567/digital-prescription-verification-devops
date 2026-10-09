@@ -6,7 +6,7 @@
   <p class="subtitle">{% if role == 'doctor' %}Issue and manage prescriptions for your clinic.{% elif role == 'pharmacist' %}Verify a prescription before dispensing medication.{% else %}Manage hospitals, doctors, and pharmacists.{% endif %}</p>
 </div>
 
-<form class="card login-form" method="post">
+<form class="card login-form" action="{{ url_for('auth.login', role=role) }}" method="post">
   <div class="field">
     <label for="email">Email</label>
     <input type="email" id="email" name="email" required autocomplete="email" placeholder="doctor@rxverify.local">
