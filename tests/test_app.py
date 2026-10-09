@@ -15,6 +15,7 @@ def prescription_form():
     return {
         "patient_name": "Aarav Shah",
         "patient_reference": "UHID-1024",
+        "doctor_name": "Dr. Meera Patel",
         "clinic_name": "City Care Clinic",
         "medicine_name": "Amoxicillin",
         "dosage": "500 mg twice daily",

@@ -8,6 +8,8 @@ from functools import wraps
 from pathlib import Path
 
 from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
+from prometheus_flask_exporter import PrometheusMetrics
+from prometheus_client import Gauge
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -214,6 +216,16 @@ def create_app(test_config: dict | None = None) -> Flask:
         get_db().commit()
         flash("Prescription revoked. Future checks will show it as invalid.", "success")
         return redirect(url_for("prescriptions"))
+
+    # Prometheus metrics
+    metrics = PrometheusMetrics(app)
+    # Custom application info metric - only register once per process
+    try:
+        rxverify_info = Gauge('rxverify_info', 'RxVerify application info', ['version'])
+        rxverify_info.labels(version='1.0.0').set(1)
+    except ValueError:
+        # Metric already registered (e.g., in test environment with multiple create_app calls)
+        pass
 
     return app
 

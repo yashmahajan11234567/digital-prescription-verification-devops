@@ -1,0 +1,62 @@
+stages:
+  - lint
+  - test
+  - security
+  - build
+  - deploy
+
+variables:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${CI_PROJECT_PATH}
+  DOCKER_DRIVER: overlay2
+
+before_script:
+  - pip install --upgrade pip
+  - pip install -r requirements.txt
+  - pip install -r requirements-dev.txt
+  - pip install ruff
+
+lint:
+  stage: lint
+  script:
+    - ruff check app.py tests/
+
+test:
+  stage: test
+  script:
+    - pytest -q
+
+security:
+  stage: security
+  script:
+    - pip install pip-audit
+    - pip-audit -r requirements.txt
+
+build:
+  stage: build
+  image: docker:24.0.5
+  services:
+    - docker:24.0.5-dind
+  before_script:
+    - docker login -u "$CI_REGISTRY_USER" -p "$CI_REGISTRY_PASSWORD" $REGISTRY
+  script:
+    - docker build -t $REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA .
+    - docker push $REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA
+    - docker tag $REGISTRY/$IMAGE_NAME:$CI_COMMIT_SHA $REGISTRY/$IMAGE_NAME:latest
+    - docker push $REGISTRY/$IMAGE_NAME:latest
+  only:
+    - main
+
+deploy:
+  stage: deploy
+  image: bitnami/kubectl:latest
+  before_script:
+    - kubectl config set-cluster minikube --server=https://kubernetes.default.svc --insecure-skip-tls-verify=true
+    - kubectl config set-credentials minikube-user --token=$(cat /var/run/secrets/kubernetes.io/serviceaccount/token)
+    - kubectl config set-context minikube --cluster=minikube --user=minikube-user --namespace=rxverify
+    - kubectl config use-context minikube
+  script:
+    - kubectl set image deployment/rxverify rxverify=$REGISTRY/$IMAGE_NAME:latest -n rxverify
+    - kubectl rollout status deployment/rxverify -n rxverify --timeout=120s
+  only:
+    - main

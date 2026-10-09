@@ -1,0 +1,18 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rxverify
+  namespace: rxverify
+  labels:
+    release: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: rxverify
+  endpoints:
+    - port: http
+      path: /metrics
+      interval: 30s
+  namespaceSelector:
+    matchNames:
+      - rxverify
