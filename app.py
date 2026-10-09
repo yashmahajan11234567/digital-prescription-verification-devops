@@ -7,9 +7,19 @@ from datetime import date, datetime, timezone
 from functools import wraps
 from pathlib import Path
 
-from flask import Flask, abort, flash, g, redirect, render_template, request, session, url_for
-from prometheus_flask_exporter import PrometheusMetrics
+from flask import (
+    Flask,
+    abort,
+    flash,
+    g,
+    redirect,
+    render_template,
+    request,
+    session,
+    url_for,
+)
 from prometheus_client import Gauge
+from prometheus_flask_exporter import PrometheusMetrics
 from werkzeug.security import check_password_hash, generate_password_hash
 
 
@@ -173,7 +183,7 @@ def create_app(test_config: dict | None = None) -> Flask:
             get_db().commit()
             return redirect(url_for("verification_result", verification_id=verification_id))
 
-        return render_template("issue.html", form={"issue_date": date.today().isoformat()})
+        return render_template("issue.html", form={"issue_date": datetime.now(timezone.utc).date().isoformat()})
 
     @app.get("/verify")
     @require_role("pharmacist")
@@ -218,7 +228,7 @@ def create_app(test_config: dict | None = None) -> Flask:
         return redirect(url_for("prescriptions"))
 
     # Prometheus metrics
-    metrics = PrometheusMetrics(app)
+    _ = PrometheusMetrics(app)
     # Custom application info metric - only register once per process
     try:
         rxverify_info = Gauge('rxverify_info', 'RxVerify application info', ['version'])
