@@ -1,11 +1,11 @@
 {% extends "base.html" %}
 {% block title %}{{ role|title }} sign in | RxVerify{% endblock %}
 {% block content %}
-<div class="page-heading"><p class="eyebrow">{{ role|upper }} PORTAL</p><h1>Sign in to continue</h1><p>{% if role == 'doctor' %}Issue and manage prescriptions for your clinic.{% else %}Verify a prescription before dispensing medication.{% endif %}</p></div>
+<div class="page-heading"><p class="eyebrow">{{ role|upper }} PORTAL</p><h1>Sign in to continue</h1><p>{% if role == 'doctor' %}Issue and manage prescriptions for your clinic.{% elif role == 'pharmacist' %}Verify a prescription before dispensing medication.{% else %}Manage hospitals, doctors, and pharmacists.{% endif %}</p></div>
 <form class="card login-form" method="post">
   <label>Email<input type="email" name="email" required autocomplete="email"></label>
   <label>Password<input type="password" name="password" required autocomplete="current-password"></label>
   <button class="button" type="submit">Sign in as {{ role|title }}</button>
-  <p class="demo-note">Demo: <code>{% if role == 'doctor' %}doctor@rxverify.local / doctor123{% else %}pharmacist@rxverify.local / pharmacist123{% endif %}</code></p>
+  <p class="demo-note">Demo: <code>{% if role == 'doctor' %}doctor@rxverify.local / doctor123{% elif role == 'pharmacist' %}pharmacist@rxverify.local / pharmacist123{% else %}admin@rxverify.local / admin123{% endif %}</code></p>
 </form>
 {% endblock %}

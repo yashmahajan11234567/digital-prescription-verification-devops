@@ -14,6 +14,6 @@
 {% else %}
   <div class="status revoked">✕ No matching prescription</div>
   <div class="page-heading"><p class="eyebrow">{{ verification_id|upper }}</p><h1>We could not verify this ID.</h1><p>Check the ID and try again. It may not have been issued by this system.</p></div>
-  <a class="button" href="{{ url_for('verify_form') }}">Try another ID</a>
+  <a class="button" href="{{ url_for('pharmacist.verify_form') }}">Try another ID</a>
 {% endif %}
 {% endblock %}

@@ -1,0 +1,42 @@
+{% extends "base.html" %}
+{% block title %}Hospitals | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>Hospitals</h1>
+  <p>All registered hospitals with staff counts.</p>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Address</th>
+      <th>Phone</th>
+      <th>Email</th>
+      <th>Doctors</th>
+      <th>Pharmacists</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for hospital in hospitals %}
+    <tr>
+      <td><a href="{{ url_for('admin.hospital_detail', hospital_id=hospital.id) }}">{{ hospital.name }}</a></td>
+      <td>{{ hospital.address or '' }}</td>
+      <td>{{ hospital.phone or '' }}</td>
+      <td>{{ hospital.email or '' }}</td>
+      <td>{{ hospital.doctor_count }}</td>
+      <td>{{ hospital.pharmacist_count }}</td>
+      <td>
+        <a class="button secondary" href="{{ url_for('admin.add_doctor', hospital_id=hospital.id) }}">Add Doctor</a>
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="card">
+  <a class="button" href="{{ url_for('admin.add_hospital') }}">Add Hospital</a>
+</div>
+{% endblock %}

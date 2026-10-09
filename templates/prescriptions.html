@@ -7,11 +7,11 @@
   {% for prescription in prescriptions %}
     <article class="card record">
       <div><span class="pill {{ prescription['status'] }}">{{ prescription['status'] }}</span><h2>{{ prescription['medicine_name'] }}</h2><p>{{ prescription['patient_name'] }} · {{ prescription['doctor_name'] }}</p><code>{{ prescription['verification_id'] }}</code></div>
-      <div class="record-actions"><a href="{{ url_for('verification_result', verification_id=prescription['verification_id']) }}">View verification</a>{% if prescription['status'] == 'active' %}<form method="post" action="{{ url_for('revoke_prescription', prescription_id=prescription['id']) }}"><button class="link-button" type="submit">Revoke</button></form>{% endif %}</div>
+      <div class="record-actions"><a href="{{ url_for('pharmacist.verification_result', verification_id=prescription['verification_id']) }}">View verification</a>{% if prescription['status'] == 'active' %}<form method="post" action="{{ url_for('doctor.revoke_prescription', prescription_id=prescription['id']) }}"><button class="link-button" type="submit">Revoke</button></form>{% endif %}</div>
     </article>
   {% endfor %}
   </div>
 {% else %}
-  <section class="card empty"><h2>No prescriptions yet.</h2><a class="button" href="{{ url_for('issue_prescription') }}">Issue the first one</a></section>
+  <section class="card empty"><h2>No prescriptions yet.</h2><a class="button" href="{{ url_for('doctor.issue_prescription') }}">Issue the first one</a></section>
 {% endif %}
 {% endblock %}

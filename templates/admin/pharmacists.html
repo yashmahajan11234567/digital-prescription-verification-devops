@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Pharmacists | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>Pharmacists</h1>
+  <p>All registered pharmacists with their verification IDs.</p>
+</div>
+
+<table class="table">
+  <thead>
+    <tr>
+      <th>Name</th>
+      <th>Email</th>
+      <th>Identifier</th>
+      <th>Active</th>
+      <th>Verifications</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for pharmacist in pharmacists %}
+    <tr>
+      <td>{{ pharmacist.name }}</td>
+      <td>{{ pharmacist.email }}</td>
+      <td>{{ pharmacist.pharmacist_identifier or '—' }}</td>
+      <td>{% if pharmacist.is_active %}Yes{% else %}No{% endif %}</td>
+      <td>{{ pharmacist.verification_count }}</td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<div class="card">
+  <a class="button" href="{{ url_for('admin.add_pharmacist') }}">Add Pharmacist</a>
+</div>
+{% endblock %}

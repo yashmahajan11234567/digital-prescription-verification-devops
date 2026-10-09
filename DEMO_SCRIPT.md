@@ -5,7 +5,7 @@
 # 1. Start all port-forwards in background
 kubectl -n rxverify port-forward svc/rxverify 5003:80 &
 kubectl -n monitoring port-forward svc/monitoring-grafana 3000:80 &
-kubectl -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9090:9090 &
+kubectl -n monitoring port-forward svc/monitoring-kube-prometheus-prometheus 9091:9090 &
 
 # 2. Verify health
 curl -s http://localhost:5003/health
@@ -75,10 +75,10 @@ kubectl rollout undo deployment/rxverify -n rxverify
 ### 3:30–4:30 | Monitoring & Observability (Three Pillars)
 **Open Grafana Dashboard:** http://localhost:3000/d/rxverify/rxverify-devops-dashboard
 - **Metrics (Prometheus):** Success rate gauge, request rate by status, latency p95/p99, pod status
-- **Logs (Loki):** Click "Explore" → Loki → Query `{job="rxverify"}` → Show app logs
+- **Logs (Loki):** Click "Explore" → Loki → Query `{job="rxverify"}` → *Note: Infrastructure ready; app emits only gunicorn startup logs. For demo, show `kubectl logs` fallback.*
 - **Traces:** *Explain* OpenTelemetry integration would go here (diagram on slide)
 
-**Prometheus Targets:** http://localhost:9090/targets → Show `rxverify` job UP
+**Prometheus Targets:** http://localhost:9091/targets → Show `rxverify` job UP
 
 ---
 

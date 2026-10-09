@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}Notifications | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">DOCTOR PORTAL</p>
+  <h1>Notifications</h1>
+  <p>View all your notifications.</p>
+</div>
+
+{% if notifications %}
+<table class="table">
+  <thead>
+    <tr>
+      <th>Message</th>
+      <th>Status</th>
+      <th>Date</th>
+      <th>Actions</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for n in notifications %}
+    <tr class="{% if not n.is_read %}unread{% endif %}">
+      <td>{{ n.message }}</td>
+      <td>{% if n.is_read %}Read{% else %}Unread{% endif %}</td>
+      <td>{{ n.created_at }}</td>
+      <td>
+        {% if not n.is_read %}
+        <form method="post" action="{{ url_for('doctor.mark_notification_read', notification_id=n.id) }}" style="display:inline;">
+          <button class="button secondary" type="submit">Mark read</button>
+        </form>
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<form method="post" action="{{ url_for('doctor.mark_all_read') }}" style="display:inline;">
+  <button class="button secondary" type="submit">Mark all as read</button>
+</form>
+{% else %}
+<p>No notifications.</p>
+{% endif %}
+{% endblock %}

@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+{% block title %}Register Doctor | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading">
+  <p class="eyebrow">ADMIN PORTAL</p>
+  <h1>Register Doctor</h1>
+  <p>Add a doctor to {{ hospital.name }}.</p>
+</div>
+
+<form class="card form-grid" method="post">
+  <label>Doctor name<input name="name" value="{{ form.name or '' }}" required></label>
+  <label>Email<input type="email" name="email" value="{{ form.email or '' }}" required></label>
+  <label>Password<input type="password" name="password" required autocomplete="new-password"></label>
+  <div class="full"><button class="button" type="submit">Register doctor</button></div>
+</form>
+{% endblock %}
