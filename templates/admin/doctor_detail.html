@@ -1,0 +1,74 @@
+{% extends "base.html" %}
+{% block title %}{{ doctor.name }} | {{ hospital.name }} | RxVerify{% endblock %}
+{% block content %}
+<div class="page-heading hospital-header">
+  <div>
+    <h1>{{ doctor.name }}</h1>
+    <p class="subtitle">{{ hospital.name }} · {{ doctor.email }}</p>
+  </div>
+  <a class="button secondary" href="{{ url_for('admin.hospital_detail', hospital_id=hospital.id) }}">Back to Hospital</a>
+</div>
+
+<div class="hospital-meta">
+  <div class="field">
+    <span class="label">Total Prescriptions</span>
+    <span class="value">{{ prescriptions|length }}</span>
+  </div>
+  {% if date_filter %}
+  <div class="field">
+    <span class="label">Filtered by Date</span>
+    <span class="value">{{ date_filter }}</span>
+  </div>
+  {% endif %}
+</div>
+
+{% if date_filter %}
+<div style="margin-bottom: 16px;">
+  <a class="button secondary small" href="{{ url_for('admin.doctor_detail', hospital_id=hospital.id, doctor_id=doctor.id) }}">Show All</a>
+</div>
+{% endif %}
+
+<section class="card">
+  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <h2>Prescriptions</h2>
+    <form method="get" style="display: inline;">
+      <input type="date" name="date" value="{{ date_filter or '' }}" style="margin-right: 8px;">
+      <button class="button secondary small" type="submit">Filter</button>
+    </form>
+  </div>
+  {% if prescriptions %}
+  <div class="table-wrapper">
+  <table class="table">
+    <thead>
+      <tr>
+        <th>Verification ID</th>
+        <th>Patient</th>
+        <th>Medicine</th>
+        <th>Dosage</th>
+        <th>Issue Date</th>
+        <th>Status</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for rx in prescriptions %}
+      <tr>
+        <td><code>{{ rx.verification_id }}</code></td>
+        <td>{{ rx.patient_name }}</td>
+        <td>{{ rx.medicine_name }}</td>
+        <td>{{ rx.dosage }}</td>
+        <td>{{ rx.issue_date }}</td>
+        <td><span class="pill status-{{ rx.status }}">{{ rx.status|capitalize }}</span></td>
+        <td>
+          <a class="button secondary small" href="{{ url_for('pharmacist.verify_result', verification_id=rx.verification_id) }}">View</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+  </div>
+  {% else %}
+  <p style="color: var(--muted);">No prescriptions found{% if date_filter %} for {{ date_filter }}{% endif %}.</p>
+  {% endif %}
+</section>
+{% endblock %}
