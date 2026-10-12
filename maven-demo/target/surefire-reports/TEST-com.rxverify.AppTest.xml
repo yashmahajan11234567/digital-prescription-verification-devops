@@ -12,7 +12,7 @@
     <property name="sun.java.launcher" value="SUN_STANDARD"/>
     <property name="user.country" value="US"/>
     <property name="sun.boot.library.path" value="/opt/homebrew/Cellar/openjdk/27/libexec/openjdk.jdk/Contents/Home/lib"/>
-    <property name="sun.java.command" value="/Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/surefire/surefirebooter-20261012184204573_3.jar /Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/surefire 2026-10-12T18-42-04_540-jvmRun1 surefire-20261012184204573_1tmp surefire_0-20261012184204573_2tmp"/>
+    <property name="sun.java.command" value="/Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/surefire/surefirebooter-20261012184423113_3.jar /Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/surefire 2026-10-12T18-44-23_072-jvmRun1 surefire-20261012184423113_1tmp surefire_0-20261012184423113_2tmp"/>
     <property name="http.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="jdk.debug" value="release"/>
     <property name="surefire.test.class.path" value="/Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/test-classes:/Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/classes:/Users/yashsiphone/.m2/repository/org/junit/jupiter/junit-jupiter/5.10.2/junit-jupiter-5.10.2.jar:/Users/yashsiphone/.m2/repository/org/junit/jupiter/junit-jupiter-api/5.10.2/junit-jupiter-api-5.10.2.jar:/Users/yashsiphone/.m2/repository/org/opentest4j/opentest4j/1.3.0/opentest4j-1.3.0.jar:/Users/yashsiphone/.m2/repository/org/junit/platform/junit-platform-commons/1.10.2/junit-platform-commons-1.10.2.jar:/Users/yashsiphone/.m2/repository/org/apiguardian/apiguardian-api/1.1.2/apiguardian-api-1.1.2.jar:/Users/yashsiphone/.m2/repository/org/junit/jupiter/junit-jupiter-params/5.10.2/junit-jupiter-params-5.10.2.jar:/Users/yashsiphone/.m2/repository/org/junit/jupiter/junit-jupiter-engine/5.10.2/junit-jupiter-engine-5.10.2.jar:/Users/yashsiphone/.m2/repository/org/junit/platform/junit-platform-engine/1.10.2/junit-platform-engine-1.10.2.jar:"/>
@@ -29,7 +29,7 @@
     <property name="java.vm.specification.vendor" value="Oracle Corporation"/>
     <property name="java.specification.name" value="Java Platform API Specification"/>
     <property name="apple.awt.application.name" value="ForkedBooter"/>
-    <property name="surefire.real.class.path" value="/Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/surefire/surefirebooter-20261012184204573_3.jar"/>
+    <property name="surefire.real.class.path" value="/Users/yashsiphone/Downloads/digital-prescription-verification-devops/maven-demo/target/surefire/surefirebooter-20261012184423113_3.jar"/>
     <property name="sun.management.compiler" value="HotSpot 64-Bit Tiered Compilers"/>
     <property name="ftp.nonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.runtime.version" value="27"/>
@@ -59,10 +59,10 @@
     <property name="socksNonProxyHosts" value="local|*.local|169.254/16|*.169.254/16"/>
     <property name="java.class.version" value="71.0"/>
   </properties>
-  <testcase name="testAdd" classname="com.rxverify.AppTest" time="0.008"/>
-  <testcase name="testGetAppName" classname="com.rxverify.AppTest" time="0.0"/>
-  <testcase name="testGetVersion" classname="com.rxverify.AppTest" time="0.0"/>
-  <testcase name="testMainRunsWithoutException" classname="com.rxverify.AppTest" time="0.001">
+  <testcase name="testAdd" classname="com.rxverify.AppTest" time="0.009"/>
+  <testcase name="testGetAppName" classname="com.rxverify.AppTest" time="0.001"/>
+  <testcase name="testGetVersion" classname="com.rxverify.AppTest" time="0.001"/>
+  <testcase name="testMainRunsWithoutException" classname="com.rxverify.AppTest" time="0.0">
     <system-out><![CDATA[RxVerify Maven Demo - Build Successful!
 Version: 1.0.0
 Application: Digital Prescription Verification System
