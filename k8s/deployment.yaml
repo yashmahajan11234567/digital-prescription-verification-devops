@@ -61,4 +61,11 @@ spec:
             limits:
               cpu: "500m"
               memory: "256Mi"
+          volumeMounts:
+            - name: sqlite-storage
+              mountPath: /app/instance
+      volumes:
+        - name: sqlite-storage
+          persistentVolumeClaim:
+            claimName: rxverify-sqlite-pvc
       imagePullSecrets: []
