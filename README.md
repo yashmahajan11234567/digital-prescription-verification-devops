@@ -125,3 +125,35 @@ The Terraform configuration is in [`terraform/`](terraform/). It provisions an U
 ## Ansible deployment
 
 The Ansible configuration is in [`ansible/`](ansible/). After Terraform provisions EC2, the playbook installs Docker, builds RxVerify on the server, and runs it on port 80.
+
+## Tools & Technologies Used
+
+| Category | Tools |
+|----------|-------|
+| **Application** | Python 3.12, Flask, Gunicorn |
+| **Database** | SQLite (dev), PostgreSQL (prod), psycopg2-binary |
+| **Testing** | pytest (Python), JUnit 5 / Maven (Java demo), Playwright (E2E) |
+| **Lint & Security** | ruff, pip-audit, beautifulsoup4 |
+| **Containerization** | Docker, Docker Compose |
+| **Orchestration** | Minikube, Kubernetes, kubectl, Helm |
+| **Monitoring** | Prometheus (kube-prometheus-stack), Grafana, Loki, Promtail, ServiceMonitor |
+| **CI/CD** | GitHub Actions, Jenkinsfile, GitLab CI |
+| **Infrastructure as Code** | Terraform, Ansible |
+| **Version Control** | Git, GitHub |
+| **Frontend** | HTML, CSS (custom properties, clamp typography), Space Grotesk / Inter / JetBrains Mono fonts |
+| **Video / Media** | Hyperframes (launch brag video), GSAP |
+| **Agent Framework** | Hermes Agent, Agency-Agents plugin, Taste skill |
+
+## Verified Demo
+
+All DevOps components verified working:
+- CI/CD pipeline: GitHub Actions (all 3 jobs passing)
+- K8s deployment: Minikube with rolling update + rollback tested
+- Monitoring: Prometheus scraping (`up{job="rxverify"}=1`), Grafana dashboard (5 panels), Loki log ingestion
+- SQLite persistence: PVC-mounted, data survives pod restart
+- E2E tests: Playwright 19/19 passing
+- Unit tests: pytest 5/5, Maven 4/4
+
+## Repository Status
+
+**Complete — all 24 syllabus topics implemented with working artifacts.**

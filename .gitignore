@@ -11,3 +11,4 @@ ansible/inventory.ini
 ansible/secrets.yml
 *.pem
 .DS_Store
+graphify-out/
